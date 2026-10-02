@@ -90,6 +90,13 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
 .gloss .en{font-size:.78rem;opacity:.8;display:block}
 .gloss .q{position:absolute;right:8px;top:8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--accent-ink);background:transparent;color:var(--accent-ink);font-family:var(--display);cursor:pointer;line-height:1}
 .txt .w{cursor:pointer;border-radius:3px}
+.talksheet{height:min(78vh,640px)}
+.talklog{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;border:2px solid var(--box-edge);border-radius:8px;padding:10px 12px;background:#fff;line-height:1.5}
+.tl{display:flex;flex-direction:column;gap:1px}
+.tl .tw{font-family:var(--display);font-size:.85rem;color:var(--box-muted)}
+.tl .tt{font-family:var(--display);font-size:1.08rem;word-break:keep-all}
+.tl-empty{color:var(--box-muted);margin:0}
+body.talkopen .gloss{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));z-index:20}
 .txt .w.hint{background:rgba(242,201,76,.35);box-shadow:0 0 0 2px rgba(242,201,76,.6);animation:tapPulse 1.3s ease-in-out infinite}
 @keyframes tapPulse{50%{background:rgba(242,201,76,.75)}}
 .gloss .q.pulse{animation:qPulse 1.2s ease-in-out infinite}
@@ -131,6 +138,7 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
     <div class="hbtns">
       <button class="cartbtn" id="cartBtn" aria-label="카트리지 바꾸기"><span class="cl">1편</span></button>
       <button class="pill" id="sndBtn" aria-pressed="true" aria-label="소리">♪</button>
+      <button class="pill" id="talkBtn" aria-label="대화 기록">대화</button>
       <button class="pill badge" id="badgeBtn">배지 0/0</button>
     </div>
   </header>
@@ -170,6 +178,12 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
   <div class="help" id="help"></div>
 </div>
 
+<div class="panel" id="talkPanel" hidden>
+  <div class="sheet talksheet" role="dialog" aria-label="대화 기록">
+    <h2>대화 기록 <button class="btn" id="talkClose">닫기</button></h2>
+    <div class="talklog" id="talkList"></div>
+  </div>
+</div>
 <div class="panel" id="panel" hidden>
   <div class="sheet">
     <h2>배지 <button class="qbtn" id="enToggle" aria-label="영어로 보기">?</button></h2>
@@ -861,7 +875,7 @@ const npcAt=(x,y)=>NPCS.find(n=>n.x===x&&n.y===y);
 const walkable=(x,y)=>!!(C.legend[at(x,y)]||{}).walk;
 const blocked=(x,y)=>!walkable(x,y)||!!npcAt(x,y);
 const menuOpen=()=>!$('cartPanel').hidden;
-const panelOpen=()=>!$('panel').hidden||menuOpen();
+const panelOpen=()=>!$('panel').hidden||menuOpen()||!$('talkPanel').hidden;
 
 function tryMove(){
   if(player.moving||!held||dlg||panelOpen())return;
@@ -909,6 +923,7 @@ function show(s){
   if(s.set){s.set();save();updateQuest()}
   if(s.award)award(s.award);
   $('who').textContent=s.who||dlg.name;$('choices').hidden=true;$('choices').innerHTML='';$('more').hidden=true;
+  logTalk(s.who||dlg.name,s.say||s.ask);
   typeText(s.say||s.ask,()=>{if(s.ask)renderChoices(s);else $('more').hidden=false});
 }
 /* ---------- tap a word: Korean definition, English only behind ? (dictionary in window.LEX, built by build.py) ---------- */
@@ -922,6 +937,20 @@ function lexLookup(w){ // word as written → [[lemma,{k,e}],…]; unknown words
   return (ls||[]).map(hit).filter(Boolean);
 }
 function hideGloss(){$('gloss').hidden=true}
+/* ---------- conversation log: every line shown, scrollable, words tappable like in the dialogue box ---------- */
+let talk=[];
+function loadTalk(){talk=[];try{talk=JSON.parse(localStorage.getItem(C.save+'-talk')||'[]')}catch(e){}}
+function logTalk(who,text){
+  if(!text)return;const last=talk[talk.length-1];if(last&&last[0]===who&&last[1]===text)return;
+  talk.push([who,text]);if(talk.length>150)talk=talk.slice(-150);
+  try{localStorage.setItem(C.save+'-talk',JSON.stringify(talk))}catch(e){}
+}
+function openTalk(){
+  const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  $('talkList').innerHTML=talk.length?talk.map(([w,t])=>`<div class="tl"><span class="tw">${esc(w)}</span><span class="tt txt">${wordsHTML(t)}</span></div>`).join(''):'<p class="tl-empty">아직 대화가 없어요.</p>';
+  $('talkPanel').hidden=false;document.body.classList.add('talkopen');const L=$('talkList');L.scrollTop=L.scrollHeight;
+}
+function closeTalk(){$('talkPanel').hidden=true;document.body.classList.remove('talkopen');hideGloss()}
 /* Until the player has tapped a word once, the longest word with a definition pulses with a small "눌러 보세요" tag. */
 function tapHint(el){
   if(explained.tapWord)return;
@@ -997,6 +1026,7 @@ function closeDialog(){
 }
 function cancel(){
   if(!$('gloss').hidden){hideGloss();return}
+  if(!$('talkPanel').hidden){closeTalk();return}
   if(menuOpen())closeMenu();
   else if(dlg)closeDialog();
   else if(!$('panel').hidden)$('panel').hidden=true;
@@ -1097,7 +1127,7 @@ function boot(id){
   C=next;
   MAP=C.map.map(r=>r.split(''));MW=MAP[0].length;MH=MAP.length;
   NPCS=C.npcs;NPCS.forEach(n=>{n.home=n.home||n.dir;n.turnAt=performance.now()+2000+Math.random()*3000});
-  loadState();
+  loadState();loadTalk();
   Object.assign(player,{x:state.x,y:state.y,dir:state.dir,moving:false,t:0});petReset();pet.on=false;
   $('cartBtn').innerHTML=`<span class="cl">${C.n}</span>`;$('cartBtn').style.setProperty('--cart',C.color);$('help').innerHTML=C.help||'';
   try{localStorage.setItem('daneo-maul-cart',C.id)}catch(e){}
@@ -1142,6 +1172,8 @@ $('dlg').addEventListener('click',e=>{const w=e.target.closest('.txt .w');if(w){
 $('gloss').addEventListener('click',e=>{if(!e.target.closest('.q'))hideGloss()});
 $('enToggle').addEventListener('click',()=>$('panel').classList.toggle('en'));
 $('choices').addEventListener('pointerdown',e=>{const b=e.target.closest('.choice');if(b){sel=choiceBtns().indexOf(b);markSel()}});
+$('talkBtn').addEventListener('click',openTalk);$('talkClose').addEventListener('click',closeTalk);
+$('talkPanel').addEventListener('click',e=>{if(e.target.id==='talkPanel'){closeTalk();return}const w=e.target.closest('.w');if(w)showWord(w.textContent)});
 $('badgeBtn').addEventListener('click',openPanel);
 $('cartBtn').addEventListener('click',openMenu);
 $('cartClose').addEventListener('click',closeMenu);
