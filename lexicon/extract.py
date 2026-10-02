@@ -18,6 +18,10 @@ for r in [repo]:
         for m in re.finditer(r"^\s*'([가-힣 ]{2,})':\{k:",src,flags=re.M):
             w=m.group(1)
             if ' ' not in w: names.add((w,'NNG'))
+# plus every name in the shared dictionary (English written as "Name — … name/people/creature…")
+_defs=json.loads((here/'defs.json').read_text(encoding='utf-8')) if (here/'defs.json').exists() else {}
+for w,v in _defs.items():
+    if v and ' — ' in (v.get('e') or '') and re.fullmatch('[가-힣]{2,}',w): names.add((w,'NNP'))
 for w,tag in names: kiwi.add_user_word(w,tag,score=5)
 texts=[]
 for p in sorted((repo/'src').glob('*.html')):
@@ -35,6 +39,7 @@ def lemmas(eoj):
         if t.tag in ('VV','VA','VX','VV-R','VA-R','VV-I','VA-I'): out.append(t.form+'다')
         elif t.tag in CONTENT and t.tag!='SL': out.append(t.form)
         i+=1
+    out=[l.replace(' ','') for l in out]   # user-dictionary names can come back with a space (벤 사스)
     seen=[];[seen.append(l) for l in out if l not in seen];return seen[:3]
 mp={};example={}
 for t in texts:
