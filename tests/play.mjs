@@ -16,7 +16,7 @@ process.on('exit',()=>{reap();unlock();try{fs.rmSync(tmp,{recursive:true,force:t
 const tmp=fs.mkdtempSync('/tmp/play-');
 fs.copyFileSync(path.join(root,'index.html'),path.join(tmp,'built.html'));
 const html=fs.readFileSync(path.join(tmp,'built.html'),'utf8');
-const driver=fs.readFileSync(path.join(root,'tests/tapcheck.js'),'utf8');
+const driver=fs.readFileSync(path.join(root,'tests/'+(process.argv[3]||'tapcheck')+'.js'),'utf8');
 const walk='';
 fs.writeFileSync(path.join(tmp,'play.html'),html.replace('</body></html>',`<script>${driver}\ntry{localStorage.clear()}catch(e){}\nsetTimeout(()=>__play(),900);</script>\n</body></html>`));
 const port=9300+Math.floor(Math.random()*500);

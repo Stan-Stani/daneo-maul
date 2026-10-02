@@ -24,6 +24,12 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px}
 h1{margin:0;font-family:var(--display);font-weight:400;font-size:1.45rem;letter-spacing:.03em;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .hbtns{display:flex;gap:6px;align-items:center}
 .pill{font-family:var(--display);font-size:1rem;background:var(--shell-2);color:var(--muted);border:2px solid var(--edge);border-radius:999px;padding:6px 11px;cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cartbtn{position:relative;width:44px;height:38px;padding:0;border:2px solid #1B1E2B;border-radius:5px 5px 3px 3px;cursor:pointer;
+  background:linear-gradient(#0000 0 7px,var(--cart,#888) 7px);box-shadow:inset 0 -5px 0 rgba(0,0,0,.25),0 2px 0 #11141d;transition:transform .12s}
+.cartbtn::before{content:"";position:absolute;left:6px;right:6px;top:2px;height:4px;background:repeating-linear-gradient(90deg,#9AA3B5 0 2px,#0000 2px 4px);border-radius:1px}
+.cartbtn .cl{position:absolute;left:4px;right:4px;top:10px;bottom:7px;display:flex;align-items:center;justify-content:center;background:#FBFAF4;color:#1F2433;border-radius:2px;font-family:var(--display);font-size:.85rem;line-height:1}
+.cartbtn:hover,.cartbtn:focus-visible{transform:translateY(-2px)}
+.cartbtn:active{transform:translateY(2px)}
 .pill.badge{color:var(--accent)}
 .pill[aria-pressed="true"]{color:var(--accent)}
 button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -117,7 +123,7 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
   <header>
     <h1>단어 마을</h1>
     <div class="hbtns">
-      <button class="pill" id="cartBtn" aria-label="카트리지 바꾸기">3편</button>
+      <button class="cartbtn" id="cartBtn" aria-label="카트리지 바꾸기"><span class="cl">1편</span></button>
       <button class="pill" id="sndBtn" aria-pressed="true" aria-label="소리">♪</button>
       <button class="pill badge" id="badgeBtn">배지 0/0</button>
     </div>
@@ -136,7 +142,7 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
     <div class="toast" id="toast" hidden></div>
     <div class="gloss" id="gloss" hidden></div>
     <div class="cartmenu" id="cartPanel" hidden role="dialog" aria-label="카트리지 고르기">
-      <div class="ch">카트리지 <button class="x" id="cartClose" aria-label="닫기">✕</button></div>
+      <div class="ch"><span id="cartTitle">카트리지</span> <button class="x" id="cartClose" aria-label="닫기">✕</button></div>
       <div id="cartList" class="clist"></div>
       <div class="hint">▲▼ 고르기 · A 시작 · B 닫기</div>
     </div>
@@ -952,12 +958,11 @@ function choose(s,i){
       const all=(s.w?[s.w]:dlg.npc.badge);
       const ws=all.filter(w=>!state.perfect.includes(w));
       let msg;
-      if(s.missed) msg=ws.length?`아쉬워요! ★는 한 번에 맞혀야 돼요. 다음에 다시 와요. (${ws.join(', ')})`:'좋아요! 복습 끝.';
+      if(s.missed){if(ws.length){if(firstTime('reviewMiss'))msg=`아쉬워요! ★는 한 번에 맞혀야 돼요. 다음에 다시 와요. (${ws.join(', ')})`;else setTimeout(()=>toast('다음에 다시!'),250)}}
       else if(ws.length){state.perfect.push(...ws);save();updateHud();setTimeout(()=>{toast('★ 완벽: '+ws.join(', ')+'!');sfx('star')},250);checkPerfectAll();
-        msg=`★ 한 번에 맞혔어요! "${ws.join('", "')}" 배지가 별이 됐어요.`;
-        const n=dlg.npc; if(n&&n.badge.some(b=>!state.perfect.includes(b))) msg+=' 이 사람한테 다른 단어도 있어요. 다시 말해 보세요!';}
-      else{const lw=all[all.length-1],cc=lw.charCodeAt(lw.length-1);const eun=(cc>=0xAC00&&cc<=0xD7A3&&(cc-0xAC00)%28)?'은':'는';msg=`★ 정답! "${all.join('", "')}"${eun} 벌써 별이에요.`}
-      dlg.steps.splice(dlg.i+1,0,{say:msg});
+        if(firstTime('reviewStar')){msg=`★ 한 번에 맞혔어요! "${ws.join('", "')}" 배지가 별이 됐어요.`;
+        const n=dlg.npc; if(n&&n.badge.some(b=>!state.perfect.includes(b))) msg+=' 이 사람한테 다른 단어도 있어요. 다시 말해 보세요!';}}
+      if(msg)dlg.steps.splice(dlg.i+1,0,{say:msg});
     }
     dlg.next='advance';show({who:s.who,say:'맞아요! '+(s.ask.includes('___')?s.ask.replace('___',o[0]):o[0])});
   }else{
@@ -974,9 +979,11 @@ function advance(){
   if(dlg.i>=dlg.steps.length){closeDialog();return}
   show(dlg.steps[dlg.i]);
 }
+let offerNext=false;
 function closeDialog(){
   dlg=null;clearInterval(typing?.id);$('dlg').hidden=true;
-  if(pendingCelebrate){const c=pendingCelebrate;pendingCelebrate=null;setTimeout(()=>{if(!dlg)openDialog('단어 마을',c)},500)}
+  if(pendingCelebrate){const c=pendingCelebrate;pendingCelebrate=null;setTimeout(()=>{if(!dlg)openDialog('단어 마을',c)},500);return}
+  if(offerNext){offerNext=false;const i=CARTRIDGES.indexOf(C);if(i<CARTRIDGES.length-1)setTimeout(()=>{if(!dlg)openMenu(i+1)},600)}
 }
 function cancel(){
   if(!$('gloss').hidden){hideGloss();return}
@@ -1020,6 +1027,9 @@ function interact(){
   if(th){openDialog('…',typeof th==='function'?th():th);return}
 }
 
+/* Each rule is explained once per player (all cartridges), then only the toast shows. */
+let explained={};try{explained=JSON.parse(localStorage.getItem('daneo-maul-explained')||'{}')}catch(e){}
+function firstTime(k){if(explained[k])return false;explained[k]=1;try{localStorage.setItem('daneo-maul-explained',JSON.stringify(explained))}catch(e){}return true}
 function award(words){
   const nw=words.filter(w=>!has(w));if(!nw.length)return;
   state.badges.push(...nw);
@@ -1027,14 +1037,14 @@ function award(words){
   if(perfect)nw.forEach(w=>{if(!state.perfect.includes(w))state.perfect.push(w)});
   save();updateHud();
   toast('배지 획득: '+nw.join(', ')+(perfect?' ★':' ✓'));sfx('badge');
-  if(dlg){
+  if(dlg&&firstTime(perfect?'star':'check')){
     const note=perfect?{who:'단어 마을',say:`★ 한 번도 안 틀렸어요! "${nw.join('", "')}" 배지는 별이에요.`}
                       :{who:'단어 마을',say:`✓ 배지를 받았어요. 틀린 문제가 있어서 아직 별은 아니에요. 머리 위에 ? 가 생겼어요. 다시 말하면 복습 문제가 나와요!`};
     dlg.steps.splice(dlg.i+1,0,note);
   }
   if(state.badges.length>=C.words.length&&!state.celebrated){
     state.celebrated=true;save();
-    pendingCelebrate=says(C.done);
+    pendingCelebrate=says(C.done);offerNext=true;
   }
   checkPerfectAll();
 }
@@ -1071,7 +1081,7 @@ function loadState(){
 
 /* ---------- cartridges ---------- */
 function boot(id){
-  const next=CARTRIDGES.find(c=>c.id===id)||CARTRIDGES[CARTRIDGES.length-1];
+  const next=CARTRIDGES.find(c=>c.id===id)||CARTRIDGES[0];
   if(dlg){dlg=null;clearInterval(typing?.id);$('dlg').hidden=true}
   pendingCelebrate=null;held=null;$('panel').hidden=true;$('toast').hidden=true;
   C=next;
@@ -1079,15 +1089,17 @@ function boot(id){
   NPCS=C.npcs;NPCS.forEach(n=>{n.home=n.home||n.dir;n.turnAt=performance.now()+2000+Math.random()*3000});
   loadState();
   Object.assign(player,{x:state.x,y:state.y,dir:state.dir,moving:false,t:0});petReset();pet.on=false;
-  $('cartBtn').textContent=C.n;$('help').innerHTML=C.help||'';
+  $('cartBtn').innerHTML=`<span class="cl">${C.n}</span>`;$('cartBtn').style.setProperty('--cart',C.color);$('help').innerHTML=C.help||'';
+  try{localStorage.setItem('daneo-maul-cart',C.id)}catch(e){}
   updateHud();updateQuest();
   if(!state.seenIntro&&C.intro){state.seenIntro=true;save();openDialog('안내',says(C.intro))}
 }
 let menuSel=0;
-function openMenu(){
+function openMenu(suggest){
   $('toast').hidden=true;
   if(dlg)closeDialog();
-  menuSel=Math.max(0,CARTRIDGES.indexOf(C));
+  menuSel=typeof suggest==='number'?suggest:Math.max(0,CARTRIDGES.indexOf(C));
+  $('cartTitle').textContent=typeof suggest==='number'?'다음 편이 기다려요!':'카트리지';
   $('cartList').innerHTML=CARTRIDGES.map((c,i)=>{
     let got=0;try{got=(JSON.parse(localStorage.getItem(c.save)||'{}').badges||[]).length}catch(e){}
     return `<button class="cart" data-i="${i}"><span class="lab" style="background:${c.color}">${c.n}</span><span class="info"><div class="t">${c.title}${c===C?'<small>지금</small>':''}</div><div class="d">배지 ${got}/${c.words.length} · ${c.words.map(w=>w[0]).join(' · ')}</div></span></button>`}).join('');
@@ -1142,7 +1154,8 @@ addEventListener('keyup',e=>{if(KEYS[e.key]===held)held=null});
 
 /* ---------- start: newest cartridge ---------- */
 updateSound();
-boot(CARTRIDGES[CARTRIDGES.length-1].id);
+let lastCart=null;try{lastCart=localStorage.getItem('daneo-maul-cart')}catch(e){}
+boot(CARTRIDGES.some(c=>c.id===lastCart)?lastCart:CARTRIDGES[0].id); // first visit: 1편; after that, the cartridge last played
 requestAnimationFrame(loop);
 </script>
 </body></html>

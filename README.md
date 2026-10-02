@@ -5,6 +5,7 @@ Three cartridges: 1편 경기장과 도장 · 2편 도서관과 카페 · 3편 �
 
 **Play:** https://stan-stani.github.io/daneo-maul/ (built for phones; arrow keys + Z/X on a keyboard)
 
+- Starts at 1편 (then remembers the last cartridge); finishing one opens the menu on the next.
 - Tap any Korean word in a dialogue line for a simple Korean definition; English is behind the **?** button
   (in the badge sheet too).
 - Sister games with the same dictionary: [성실호](https://github.com/Stan-Stani/seongsilho) · [형제](https://github.com/Stan-Stani/hyeongje)
