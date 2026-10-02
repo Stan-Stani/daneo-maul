@@ -90,6 +90,12 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
 .gloss .en{font-size:.78rem;opacity:.8;display:block}
 .gloss .q{position:absolute;right:8px;top:8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--accent-ink);background:transparent;color:var(--accent-ink);font-family:var(--display);cursor:pointer;line-height:1}
 .txt .w{cursor:pointer;border-radius:3px}
+.txt .w.hint{background:rgba(242,201,76,.35);box-shadow:0 0 0 2px rgba(242,201,76,.6);animation:tapPulse 1.3s ease-in-out infinite}
+@keyframes tapPulse{50%{background:rgba(242,201,76,.75)}}
+.gloss .q.pulse{animation:qPulse 1.2s ease-in-out infinite}
+@keyframes qPulse{50%{transform:scale(1.18);box-shadow:0 0 0 4px rgba(31,36,51,.25)}}
+.taptip{display:inline-block;margin-left:6px;vertical-align:2px;font-size:.72rem;line-height:1.5;background:var(--box-edge);color:#fff;border-radius:999px;padding:0 8px;font-family:var(--display);pointer-events:none}
+@media (prefers-reduced-motion: reduce){.txt .w.hint,.gloss .q.pulse{animation:none}}
 .txt .w:active{background:rgba(242,201,76,.45)}
 .bd .s{font-size:1.1rem;line-height:1;font-family:var(--display)}
 .bd.got{border-color:var(--seenedge);background:var(--seen)}
@@ -920,19 +926,27 @@ function lexLookup(w){ // word as written → [[lemma,{k,e}],…]; unknown words
   return (ls||[]).map(hit).filter(Boolean);
 }
 function hideGloss(){$('gloss').hidden=true}
+/* Until the player has tapped a word once, the longest word with a definition pulses with a small "눌러 보세요" tag. */
+function tapHint(el){
+  if(explained.tapWord)return;
+  const w=[...el.querySelectorAll('.w')].filter(x=>lexLookup(x.textContent).length).sort((a,b)=>b.textContent.length-a.textContent.length)[0];
+  if(!w)return;w.classList.add('hint');w.insertAdjacentHTML('afterend','<span class="taptip">눌러 보세요</span>');
+}
 function showWord(w){
+  if(firstTime('tapWord'))document.querySelectorAll('.taptip').forEach(x=>x.remove()),document.querySelectorAll('.w.hint').forEach(x=>x.classList.remove('hint'));
   const rows=lexLookup(w);if(!rows.length){hideGloss();toast('사전에 없는 말이에요.');return}
   const el=$('gloss');
   el.innerHTML=rows.map(([h,d])=>`<div><b>${h}</b>${d.k}<span class="en" hidden>${d.e||''}</span></div>`).join('')+'<button class="q" type="button" aria-label="영어로 보기">?</button>';
   el.hidden=false;
-  el.querySelector('.q').addEventListener('click',e=>{e.stopPropagation();el.querySelectorAll('.en').forEach(x=>x.hidden=!x.hidden);clearTimeout(showWord.t);showWord.t=setTimeout(hideGloss,8000)});
+  if(!explained.tapEnglish)el.querySelector('.q').classList.add('pulse'); // until the player has tried ? once
+  el.querySelector('.q').addEventListener('click',e=>{e.stopPropagation();if(firstTime('tapEnglish'))e.currentTarget.classList.remove('pulse');el.querySelectorAll('.en').forEach(x=>x.hidden=!x.hidden);clearTimeout(showWord.t);showWord.t=setTimeout(hideGloss,8000)});
   clearTimeout(showWord.t);showWord.t=setTimeout(hideGloss,6000);
 }
 function typeText(text,done){
   clearInterval(typing?.id);const el=$('txt');el.textContent='';let i=0;
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   typing={text,done,id:null,finished:false};
-  const fin=()=>{clearInterval(typing.id);el.innerHTML=wordsHTML(text);typing.finished=true;done()};
+  const fin=()=>{clearInterval(typing.id);el.innerHTML=wordsHTML(text);tapHint(el);typing.finished=true;done()};
   typing.fin=fin;
   if(reduce)return fin();
   typing.id=setInterval(()=>{i++;el.textContent=text.slice(0,i);if(i>=text.length)fin()},28);
