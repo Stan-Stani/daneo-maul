@@ -48,6 +48,10 @@ for t in texts:
         if not key or key in mp or not re.search('[가-힣]',key):continue
         mp[key]=lemmas(key)
         for l in mp[key]: example.setdefault(l,(key,t))
+_fix=here/'fixes.json'
+if _fix.exists():   # hand fixes for words the analyzer reads wrong
+    for k,v in json.loads(_fix.read_text(encoding='utf-8')).items():
+        if not k.startswith('_'): mp[k]=v; [example.setdefault(l,(k,k)) for l in v]
 (repo/'src/lexicon-map.json').write_text(json.dumps(mp,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
 defs=json.loads((here/'defs.json').read_text(encoding='utf-8')) if (here/'defs.json').exists() else {}
 used=sorted({l for ls in mp.values() for l in ls})
