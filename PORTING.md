@@ -10,6 +10,7 @@ only where the artifact keeps the same origin/link; publish over the SAME artifa
 - The star and level rules are explained once; after that, only short toasts.
 - A one-time tutorial: the first tappable word pulses with 눌러 보세요, and the ? pulses until it has been used once.
 - 대화 log: every dialogue line, scrollable, with tappable words. It's saved per cartridge under `<save key>-talk` (`loadTalk`, `closeTalk`).
+- **Characters keep 단어 마을's own simpler style.** The port didn't change how anything is drawn. Don't bring in 성실호's pixel-art sprite system.
 
 **How tap-a-word works** (all in `src/daneo-maul.html`, search for "tap a word"):
 - `wordsHTML(text)` wraps every Hangul run in `<span class="w">` once a line finishes typing (`typeText` → `fin`).
