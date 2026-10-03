@@ -16,5 +16,6 @@ Three cartridges: 1편 경기장과 도장 · 2편 도서관과 카페 · 3편 �
 - `lexicon/extract.py` — maps every word in the game's dialogue to its dictionary form(s) with the Kiwi analyzer → `src/lexicon-map.json`.
 - `lexicon/defs.json` — learner definitions shared with 성실호 and 형제.
 - `build.py` — writes `index.html` = the game + the dictionary. `node tests/play.mjs` taps words in headless Chrome.
+- `node tests/coverage.mjs` — checks that every object you can face (trees, walls, furniture…) says something when you press A.
 
 See `PORTING.md` for adding a cartridge or porting the tap-a-word feature to another copy of the game.

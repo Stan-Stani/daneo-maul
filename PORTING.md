@@ -22,6 +22,8 @@ only where the artifact keeps the same origin/link; publish over the SAME artifa
 
 **Adding a cartridge** (new 4편 etc.):
 1. Add its `CARTRIDGES.push({...})` script block to `src/daneo-maul.html` (before the engine script), new `save` key.
+   Give every non-walkable tile a line: `things:{T:sayAt(...TREES), X:sayAt('…','…')}` (keyed by map character;
+   `sayAt` picks a line by the faced tile's position). `node tests/coverage.mjs` must show 100%.
 2. `pip install kiwipiepy` then `python3 lexicon/extract.py .` — it lists words with no definition in `src/lexicon-missing.txt`
    (lemma, word, example sentence).
 3. Add entries for those lemmas to `lexicon/defs.json`: `"lemma": {"k": "easy Korean, ≤30 chars", "e": "English"}`

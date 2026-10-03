@@ -204,6 +204,9 @@ try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.s
 <script>
 /* Cartridges register themselves here; the last one is the newest and boots first. */
 const CARTRIDGES=[];
+/* Object lines for things:{…}. sayAt(a,b,c) answers with one line, picked by the faced tile's position so neighbours differ. */
+const sayAt=(...lines)=>(x=0,y=0)=>[{say:lines[(x*7+y*13)%lines.length]}];
+const TREES=['큰 나무예요. 그늘이 시원해요. 🌳','나무 위에서 새가 노래해요. 🐦','나뭇잎이 바람에 흔들려요. 🍃','나무가 아주 높아요. 위에 다람쥐가 있어요! 🐿️'];
 </script>
 <script>
 /* =====================================================================
@@ -249,6 +252,13 @@ CARTRIDGES.push({
 
  signs:{'12,8':['표지판','경기장 · 오늘은 가라테 시합!'],'8,10':['표지판','단어 마을 · 배지 아홉 개를 모아요!'],'9,16':['표지판','가라테 도장 · 사범님이 기다려요.']},
  spots:{'4,4':'침대예요. 푹신해요. 여기에 눕고 싶어요…','7,4':'탁자예요. 병이 없어요. 아까 떨어졌나 봐요.','20,15':'팔씨름용 탁자예요. 팔꿈치를 여기에 놓아요.'},
+ things:{
+ T:sayAt(...TREES),
+ H:sayAt('빨간 벽돌집이에요. 안에서 쿨쿨 소리가 들려요. 😴','벽돌집 벽이에요. 아주 튼튼해요.','작은 창문이 있어요. 집 안이 조용해요.'),
+ S:sayAt('경기장 자리예요. 사람들이 앉아서 구경해요. 📣','경기장 벽이에요. 안에서 "와아!" 소리가 나요.','자리가 많아요. 오늘은 사람이 정말 많아요!'),
+ G:sayAt('가라테 도장 벽이에요. 안에서 "얍!" 소리가 나요. 🥋','도장 문은 아래쪽에 있어요.','창문에 하얀 도복이 걸려 있어요.'),
+ '~':sayAt('연못이에요. 물이 맑아요. 🐟','오리가 헤엄쳐요. 꽥꽥! 🦆'),
+ },
 
  npcs:[
  {id:'minsu',name:'민수',x:5,y:4,dir:'left',look:{hair:'#3B2A22',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#4A4F6A'},badge:['눕다'],
@@ -402,6 +412,10 @@ CARTRIDGES.push({
  '12,12':['표지판','공사 중 · 새 집을 짓고 있어요.'],
 },
  things:{
+ T:sayAt(...TREES),
+ L:sayAt('도서관 벽이에요. 안에서 책 냄새가 나요. 📚','도서관이에요. 안은 아주 조용해요. 🤫','창문 안에 책장이 많아요.'),
+ C:sayAt('카페 벽이에요. 커피 냄새가 나요. ☕','창문으로 맛있는 케이크가 보여요. 🍰','카페 안에서 사람들이 이야기해요.'),
+ W:sayAt('안에서 세탁기 소리가 들려요. 윙윙~','깨끗한 옷 냄새가 나요. 🧺','창문이 따뜻해요. 안에 세탁기가 많아요.'),
  k:()=>[{say:'책이 많아요. 빌리고 싶으면 사서한테 말해요.'}],
  e:()=>[{say:'누가 시험 공부를 하고 있어요. 조용히… 🤫'}],
  c:()=>[{say:'카운터예요. 커피 냄새가 좋아요.'}],
@@ -617,6 +631,10 @@ CARTRIDGES.push({
  '17,12':['표지판','배틀 필드 · 상대를 이기면 배지!'],
  },
  things:{
+ T:sayAt(...TREES),
+ L:sayAt('하얀 건물이에요. 창문 안에 컴퓨터가 많아요. 💻','안에서 삐삐 기계 소리가 나요.','큰 건물이에요. 문은 아래쪽에 있어요.'),
+ P:sayAt('포켓몬 센터 벽이에요. 빨간 지붕이 예뻐요. ❤️','센터 문은 아래쪽에 있어요.','안에서 띠리링 소리가 나요. 🎵'),
+ h:sayAt('포켓몬이 아프면 이 기계에 넣어요. 불이 반짝반짝해요. ✨'),
  k:()=>[{say:'연구 책이 많아요. 📚 「포켓몬의 비밀」, 「강아지는 왜 짖을까?」…'}],
  e:()=>[{say:'박사님 책상이에요. 연구 노트가 있어요. 📓'}],
  c:()=>[{say:'포켓몬 센터 카운터예요.'}],
@@ -802,6 +820,9 @@ CARTRIDGES.push({
  '21,12':['표지판','곡선 길 · …그런데 이 길은 곡선이 아니에요. 직선이에요! 😄'],
  },
  things:{
+ T:sayAt(...TREES),
+ Y:sayAt('체육관 벽이에요. 안에서 "가라!" 소리가 들려요. 🏟️','체육관이 아주 커요. 문은 아래쪽에 있어요.','강한 트레이너가 안에 있어요. 두근두근!'),
+ S:sayAt('가게 벽이에요. 안에서 뚝딱뚝딱 소리가 나요. 🔨','창문 안에 망치하고 드라이버가 보여요.','가게 문은 아래쪽에 있어요.'),
  k:()=>[{say:'부품이 많아요. 🔩 나사, 전선, 배터리…'}],
  w:()=>[{say:state.stage>=3?'작업대예요. 헌 부품이 있어요. 새 부품으로 대체했어요.':'작업대예요. 망치하고 드라이버가 있어요. 🔧'}],
  c:()=>[{say:'수리점 카운터예요. 신청서가 있어요. 📝'}],
@@ -1035,6 +1056,7 @@ CARTRIDGES.push({
  '16,7':['표지판','파고돔 · 10월 6일 특별 선거 투표소 🗳️'],
  },
  things:{
+ T:sayAt(...TREES),
  e:()=>[{say:'편집장 책상이에요. 오늘 뉴스 원고가 있어요. 📝'}],
  m:()=>[{say:state.stage===2?'카메라 앞 ✕ 표시에 서세요! 🎥':'방송 카메라예요. 🎥 뉴스를 보도할 때 써요.'}],
  N:()=>[{say:'파고 방송국이에요. 📺'}],
@@ -1522,7 +1544,7 @@ function interact(){
   if(C.signs&&C.signs[key]){openDialog(C.signs[key][0],says(C.signs[key][1]));return}
   if(C.spots&&C.spots[key]){openDialog('…',says(C.spots[key]));return}
   const th=C.things&&C.things[at(tx,ty)];
-  if(th){openDialog('…',typeof th==='function'?th():th);return}
+  if(th){openDialog('…',typeof th==='function'?th(tx,ty):th);return}
 }
 
 /* Each rule is explained once per player (all cartridges), then only the toast shows. */
