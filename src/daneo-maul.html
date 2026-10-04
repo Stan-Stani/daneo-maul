@@ -257,7 +257,7 @@ CARTRIDGES.push({
  H:sayAt('빨간 벽돌집이에요. 안에서 쿨쿨 소리가 들려요. 😴','벽돌집 벽이에요. 아주 튼튼해요.','작은 창문이 있어요. 집 안이 조용해요.'),
  S:sayAt('경기장 자리예요. 사람들이 앉아서 구경해요. 📣','경기장 벽이에요. 안에서 "와아!" 소리가 나요.','자리가 많아요. 오늘은 사람이 정말 많아요!'),
  G:sayAt('가라테 도장 벽이에요. 안에서 "얍!" 소리가 나요. 🥋','도장 문은 아래쪽에 있어요.','창문에 하얀 도복이 걸려 있어요.'),
- '~':sayAt('연못이에요. 물이 맑아요. 🐟','오리가 헤엄쳐요. 꽥꽥! 🦆'),
+ '~':sayAt('연못이에요. 오리 두 마리가 싸워요. 심판이 필요해요! 🦆🦆','물에 비친 내 얼굴… 시합 전이라서 긴장돼요. 😬','연못에 공이 떨어졌어요. 누가 넣었어요? ⚽'),
  },
 
  npcs:[
@@ -424,7 +424,7 @@ CARTRIDGES.push({
  w:()=>[{say:'세탁기가 돌아가요. 윙윙~ 빨래 중이에요.'}],
  f:()=>[{say:'집을 짓고 있어요. 아직 벽이 없어요.'}],
  '#':()=>[{say:'벽돌이 무거워요. 혼자 들 수 있어요? 💪'}],
- '~':()=>[{say:'연못이에요. 물고기가 있어요. 🐟'}],
+ '~':sayAt('연못이에요. 누가 책을 떨어뜨렸어요! 연체료보다 더 큰일이에요. 📕💦','오리가 조용히 헤엄쳐요. 도서관 옆이라서 오리도 조용해요. 🤫🦆'),
  n:()=>{
   if(state.book==='have') return [
    {say:'벤치에 앉아서 책을 읽어요… 📖'},
@@ -640,7 +640,7 @@ CARTRIDGES.push({
  c:()=>[{say:'포켓몬 센터 카운터예요.'}],
  f:()=>[{say:'목수 아저씨가 집을 짓고 있어요. 🔨'}],
  '#':()=>[{say:'벽돌이 무거워요. 혼자 들 수 있어요? 💪'}],
- '~':()=>[{say:'연못이에요. 물고기가 있어요. 🐟'}],
+ '~':sayAt('연못이에요. 잉어킹이 튀어요! 퐁당퐁당 🐟','물속에 꼬부기가 있어요? …아니에요, 그냥 돌이에요. 🐢'),
  },
 
  npcs:[
@@ -828,7 +828,7 @@ CARTRIDGES.push({
  c:()=>[{say:'수리점 카운터예요. 신청서가 있어요. 📝'}],
  f:()=>[{say:'목수 아저씨가 나무로 집을 짓고 있어요. 🔨'}],
  '#':()=>[{say:'벽돌이에요. 집을 지을 때 써요. 🧱'}],
- '~':()=>[{say:'연못이에요. 물고기가 있어요. 🐟'}],
+ '~':sayAt('연못이에요. 정원사 아저씨가 여기 물로 나무에 물을 줘요. 🌱💧','연못에 동전이 많아요. 다들 "관장을 이기게 해 주세요!" 빌었어요. 🪙'),
  d:()=>[{say:'흙이에요. 여기에 나무를 심어요. 🌱'}],
  y:()=>[{say:'작은 나무예요. 정원사 아저씨가 어제 심었어요. 🌳'}],
  H:()=>[{say:'새 집이에요. 집값이 얼마예요? 🏠'}],
@@ -1065,7 +1065,7 @@ CARTRIDGES.push({
  C:()=>[{say:'캐럴 위드먼 사탕 가게예요. 🍫 초콜릿 냄새가 나요!'}],
  K:()=>[{say:'새 치킨 가게예요. 10월 8일에 개업해요! 🐔'}],
  L:()=>[{say:'도서관이에요. 사진 전시회를 해요. 📷'}],
- '~':()=>[{say:'연못이에요. 레드강은 아니에요. 😄'}],
+ '~':sayAt('연못이에요. 레드강은 아니에요. 😄','레드강보다 아주 작아요. 봄에 홍수 걱정은 없어요! 🌊'),
  '*':()=>[{say:'꽃 위에 벌레가 많아요. 🐞 가을이 오니까 벌레들도 바빠요.'}],
  },
 
@@ -1165,6 +1165,377 @@ CARTRIDGES.push({
    {say:'요즘 길에서 차로 경주하는 사람들이 있어요. 아주 위험해요.'},
    COP[0],COP[1],COP[2],
    {say:'천천히, 안전하게 운전하세요!',award:['단속하다']}]},
+ ],
+});
+})();
+</script>
+<script>
+/* =====================================================================
+   카트리지 6편 · 복습 학교
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   Review of words and slips from recent practice chats (이자, 엔, 받다/맞다, 나아야, 고쳐야,
+   예를 들면, 첫 번째, 견디다/참다, 어울리다, 개선되다/개선하다, 저장하다, 어른/성인).
+   Seven teachers each check a word or two; the principal hands over the 졸업장 once all are done.
+   ===================================================================== */
+(()=>{
+const TEACH=['korean','nurse','shop','pc','art','pe','social'];
+const done=()=>NPCS.filter(n=>TEACH.includes(n.id)&&n.badge.every(has)).length;
+
+CARTRIDGES.push({
+ id:'c6', n:'6편', title:'복습 학교', color:'#E9A23B', save:'daneo-maul-v6',
+ words:[['처음이자','first and also'],['-엔','= 에는'],['받다','to receive, catch'],['낫다','to get better'],['고치다','to fix'],['개선되다','to get better (by itself)'],['저장하다','to save, store'],['첫 번째','the first'],['어울리다','to go well together'],['견디다','to endure'],['예를 들다','to give an example'],['어른','grown-up']],
+ start:{x:12,y:9,dir:'down'},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['<b>처음이자</b> 마지막 기회 = 처음<b>이고</b> 마지막<b>인</b> 기회','다음<b>엔</b> = 다음<b>에는</b> · 주말<b>엔</b> = 주말<b>에는</b>','배지를 <b>받아요</b> · 정답이 <b>맞아요</b> · 공에 <b>맞아요</b>','낫다 → <b>나아요</b>, <b>나아야</b> 돼요 · 고치다 → <b>고쳐요</b>, <b>고쳐야</b> 돼요','내가 <b>개선해요</b> · 실력이 <b>개선돼요</b>','<b>예를 들면</b> (드르면 ✗) · <b>첫 번째</b> (1번째 ✗)','<b>참다</b>: 잠깐, 하고 싶은 걸 안 해요 · <b>견디다</b>: 오래, 힘든 걸 버텨요','<b>어른</b>: 말할 때 · <b>성인</b>: 서류, 법'],
+ intro:['단어 마을 6편! 오늘은 복습 학교예요. 🏫','최근에 배운 단어를 다시 연습해요. 틀렸던 것도 있어요!','선생님 일곱 명을 만나 보세요. 다 만나면 교장 선생님한테 가요.'],
+ done:['축하해요! 배지 열두 개를 다 모았어요! 🎉','처음이자, -엔, 받다, 낫다, 고치다, 개선되다, 저장하다, 첫 번째, 어울리다, 견디다, 예를 들다, 어른!','? 가 있는 선생님한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열두 개! 모든 단어가 완벽해요!','한국어 실력이 많이 개선됐어요. 👏'],
+
+ quest(){
+  const n=done();
+  if(n<TEACH.length)return {text:`🏫 선생님들을 만나요! ${n}/${TEACH.length}`};
+  if(!state.graduated)return {late:true,text:'🎓 교장 선생님한테 가서 졸업장을 받아요!'};
+  return null;
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'Z':{tile:'schoolWall'},'=':{tile:'wood',walk:1},'q':{tile:'floor',walk:1},'k':{tile:'board'},'e':{tile:'desk'},
+  'b':{tile:'bed'},'l':{tile:'laptopTable'},'w':{tile:'workbench'},'i':{tile:'easel'},'F':{tile:'field',walk:1},
+  'n':{tile:'bench'},'~':{tile:'pond'},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.ZZZZZZZZZZ..ZZZZZZZZZZ.T",
+"T.Zkkkk====Z..Zqqb=qlllZ.T",
+"T.Z========Z..Zqqqb=qqqZ.T",
+"T.Z=e=e=e==Z..Zqqqq=qqqZ.T",
+"T.Z========Z..Zqqqq=qqqZ.T",
+"T.ZZZZ=ZZZZZ..ZZZZZZqZZZ.T",
+"T.....,.p.....p.....,....T",
+"T.....,,,,,,,,,,,,,,,....T",
+"T..**.,...~~~......,.....T",
+"T.....,...~~~......,.....T",
+"T.w...,,,,,,,,,,,,,,,....T",
+"T.........,....FFFFFFFFF.T",
+"T..i......,....FFFFFFFFF.T",
+"T.........,....FFFFFFFFF.T",
+"T..T..n...,....FFFFFFFFF.T",
+"T.........,..............T",
+"T........................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '8,8':['표지판','교실 · 국어 수업 중 📖'],
+ '14,8':['표지판','보건실하고 컴퓨터실이에요. 💊💻'],
+ },
+ things:{
+  T:sayAt(...TREES),
+  Z:sayAt('학교 벽이에요. 안에서 "다시 말해 주세요!" 소리가 나요. 🏫','큰 시계가 있어요. 공부 시간이에요! 🕘','창문 안에 학생들이 공부해요. ✏️'),
+  k:()=>[{say:'칠판이에요. "처음이자 마지막 기회" 라고 써 있어요. ✏️'}],
+  e:()=>[{say:'책상이에요. 공책에 "예를 들면" 이라고 써 있어요. 📒'}],
+  b:()=>[{say:'보건실 침대예요. 아프면 여기에 누워요. 🛏️'}],
+  l:()=>[{say:'컴퓨터예요. 화면에 "저장할까요? 네 / 아니요" 가 있어요. 💾'}],
+  w:()=>[{say:'작업대예요. 고장 난 의자가 있어요. 🔧'}],
+  i:()=>[{say:'그림이에요. 빨강하고 파랑으로 그렸어요. 잘 어울려요! 🎨'}],
+  n:()=>[{say:'벤치예요. 앉아서 쉬어요.'}],
+  '~':sayAt('연못이에요. 공이 빠졌어요! 체육 선생님이 "받아요!" 했는데… ⚽💦','오리가 줄을 서요. 첫 번째 오리, 두 번째 오리, 세 번째 오리… 🦆🦆🦆'),
+ },
+
+ npcs:[
+ {id:'korean',name:'국어 선생님',x:5,y:4,dir:'down',look:{hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#8E7CC3',pants:'#3A3F55',long:1},badge:['처음이자','-엔'],
+  after:'다음엔 더 어려운 문법을 해요! 📖',
+  talk:[
+   {say:'안녕하세요! 국어 선생님이에요. 오늘은 문법 복습이에요. 📖'},
+   {w:'처음이자',ask:'오늘이 처음이에요. 그리고 마지막이에요. 처음___ 마지막 기회예요!',opts:[['이자',1],['이고',0,'"이고" 다음에는 "마지막인 기회"가 돼야 돼요. 명사 앞에 바로 → "처음이자 마지막 기회".'],['하고',0,'"하고"는 두 개를 같이 말해요. 한 기회가 처음이고 마지막 → "이자".']]},
+   {w:'처음이자',ask:'"그는 선생님이자 작가예요." 이 사람은 몇 명이에요?',opts:[['한 명이에요.',1],['두 명이에요.',0,'"이자"는 한 사람이 두 가지예요. 선생님이고, 또 작가예요. 한 명!']]},
+   {w:'-엔',ask:'"다음엔 제가 빌려줄게요." "다음엔"은 뭐예요?',opts:[['다음에는',1],['다음에서',0,'"엔"은 "에 + 는"이에요. 다음에는 → "다음엔".']]},
+   {w:'-엔',ask:'"주말___ 빨래해요." (주말에는)',opts:[['엔',1],['은',0,'"주말은"도 말이 돼요. 그런데 "주말에는"을 짧게 하면 "주말엔"이에요.']]},
+   {say:'좋아요! "이자"하고 "엔", 이제 잘 알아요.',award:['처음이자','-엔']}]},
+ {id:'student',name:'학생',x:8,y:5,dir:'up',still:1,look:{hair:'#3B2A22',skin:'#F1C9A5',shirt:'#4F7BD6',pants:'#3A3F55'},
+  talk:[{say:'쉿! 수업 중이에요. 🤫'},{say:'오늘은 처음이자 마지막 시험이에요… 떨려요.'}]},
+ {id:'nurse',name:'보건 선생님',x:17,y:5,dir:'down',look:{hair:'#E07A9B',skin:'#F3D0B0',shirt:'#FFFFFF',pants:'#F4C2D0',long:1},badge:['낫다','견디다'],
+  after:'아프면 참지 말고 보건실에 오세요. 💊',
+  talk:[
+   {say:'보건실이에요. 어디 아파요? 💊'},
+   {w:'낫다',ask:'감기에 걸렸어요. 빨리 ___ 돼요.',opts:[['나아야',1],['나야',0,'낫다 → 나아요 → "나아야 돼요". ㅅ이 빠지지만 아가 남아요!'],['낫어야',0,'낫다는 ㅅ이 빠져요. 낫어야 ✗ → "나아야".']]},
+   {w:'낫다',ask:'어제 아팠어요. 오늘은 다 ___.',opts:[['나았어요',1],['낫았어요',0,'ㅅ이 빠져요. 나아요 → "나았어요".']]},
+   {w:'견디다',ask:'화가 났어요. 하지만 잠깐 화를 ___.',opts:[['참았어요',1],['견뎠어요',0,'잠깐, 하고 싶은 걸 안 해요 → "참다". 견디다는 오래, 힘든 걸 버텨요.']]},
+   {w:'견디다',ask:'파고의 겨울은 길고 추워요. 그래도 겨울을 ___.',opts:[['견뎌요',1],['참아요',0,'오래, 힘든 걸 버텨요 → "견뎌요". 추위를 견뎌요!']]},
+   {say:'잘했어요! 아프면 참지 마세요. 꼭 오세요!',award:['낫다','견디다']}]},
+ {id:'pc',name:'컴퓨터 선생님',x:21,y:4,dir:'down',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#3FA86B',pants:'#2E3548'},badge:['저장하다','첫 번째'],
+  after:'파일은 자주 저장하세요! 💾',
+  talk:[
+   {say:'컴퓨터실이에요. 💻'},
+   {w:'저장하다',ask:'게임을 끄기 전에 꼭 ___. 안 하면 다 없어져요!',opts:[['저장해요',1],['개선해요',0,'개선은 더 좋게 해요. 나중에 다시 쓰려고 남겨요 → "저장해요".']]},
+   {w:'저장하다',ask:'"저장"은 컴퓨터에만 써요?',opts:[['아니요, 음식이나 물건도 저장해요.',1],['네, 컴퓨터에만 써요.',0,'아니에요! 김치를 냉장고에 저장해요. 물건도 저장해요.']]},
+   {w:'첫 번째',ask:'1번, 2번, 3번 문장 중에서 1번 문장은?',opts:[['첫 번째 문장',1],['일 번째 문장',0,'1은 "첫" 이에요. 첫 번째, 두 번째, 세 번째!'],['하나 번째 문장',0,'"하나" 대신 "첫"이에요. 첫 번째!']]},
+   {w:'첫 번째',ask:'2번 문장은?',opts:[['두 번째 문장',1],['둘 번째 문장',0,'"둘" 대신 "두"예요. 두 번째!']]},
+   {say:'정답! 첫 번째 파일도, 두 번째 파일도 저장했어요. 💾',award:['저장하다','첫 번째']}]},
+ {id:'shop',name:'기술 선생님',x:3,y:12,dir:'right',look:{hair:'#5A3A22',skin:'#D9A47A',shirt:'#B5654A',pants:'#3A3A48',cap:'#F2C94C'},badge:['고치다','개선되다'],
+  after:'고장 나면 버리지 말고 고쳐요! 🔧',
+  talk:[
+   {say:'기술 선생님이에요. 이 의자가 고장 났어요. 🔧'},
+   {w:'고치다',ask:'의자가 고장 났어요. 의자를 ___ 돼요.',opts:[['고쳐야',1],['고치해야',0,'"고치다"는 "하다"가 없어요. 고치 + 어야 → "고쳐야".'],['고치어야',0,'고치 + 어야 = 고쳐야. 짧게 해요!']]},
+   {w:'고치다',ask:'어제 의자를 ___.',opts:[['고쳤어요',1],['고치했어요',0,'"하다"가 아니에요. 고치 + 었어요 → "고쳤어요".']]},
+   {w:'개선되다',ask:'제가 매일 연습해요. 그래서 제 실력이 ___.',opts:[['개선됐어요',1],['개선했어요',0,'실력이 혼자 좋아졌어요 → "개선됐어요". 제가 무엇을 좋게 하면 → "개선했어요".']]},
+   {w:'개선되다',ask:'제가 게임을 더 좋게 만들었어요. 제가 게임을 ___.',opts:[['개선했어요',1],['개선됐어요',0,'제가 했어요 → "개선했어요". 게임이 좋아졌어요 → "게임이 개선됐어요".']]},
+   {say:'좋아요! 의자도 고치고, 실력도 개선됐어요!',award:['고치다','개선되다']}]},
+ {id:'art',name:'미술 선생님',x:4,y:14,dir:'left',look:{hair:'#C0582E',skin:'#F3D0B0',shirt:'#F2C94C',pants:'#3A3F55',long:1},badge:['어울리다'],
+  after:'색을 조합하는 건 재미있어요! 🎨',
+  talk:[
+   {say:'미술 선생님이에요. 그림 그려요! 🎨'},
+   {ask:'"빨간 하고 파란"은 조금 이상해요. 색 이름은?',opts:[['빨강하고 파랑',1],['빨갛하고 파랗',0,'색 이름은 "빨강, 파랑, 노랑"이에요. 아니면 "빨간색, 파란색"!']]},
+   {ask:'빨강하고 파랑이 잘 맞아요. 두 색이 잘 ___.',opts:[['어울려요',1],['조합해요',0,'"조합하다"는 섞어요. 잘 맞아요 → "어울려요".'],['고쳐요',0,'고치다는 고장 난 걸 다시 되게 해요. 잘 맞아요 → "어울려요".']]},
+   {ask:'"좋은 조합이에요"는 무슨 뜻이에요?',opts:[['같이 있으면 좋아요.',1],['고장 났어요.',0,'조합은 같이 섞은 거예요. "좋은 조합" = 같이 있으면 좋아요.']]},
+   {ask:'이 모자가 당신한테 잘 ___!',opts:[['어울려요',1],['맞아요',0,'"맞아요"는 크기가 딱 좋아요. 보기에 좋아요 → "어울려요".']]},
+   {say:'멋져요! 색이 아주 잘 어울려요.',award:['어울리다']}]},
+ {id:'pe',name:'체육 선생님',x:19,y:14,dir:'down',look:{hair:'#1E1E24',skin:'#E3B48C',shirt:'#D9544B',pants:'#2E3548',cap:'#2E3548'},badge:['받다'],
+  after:'공을 잘 받아요! 다음엔 시합해요. ⚽',
+  talk:[
+   {say:'체육 선생님이에요! 공 던질게요. 받아요! ⚽'},
+   {ask:'공이 날아와요. 손으로 잡아요. 공을 ___.',opts:[['받아요',1],['맞아요',0,'"공에 맞아요"는 공이 몸에 와서 부딪혀요. 아파요! 손으로 잡아요 → "받아요".']]},
+   {ask:'앗! 공이 머리에 왔어요. 머리에 공을 ___.',opts:[['맞았어요',1],['받았어요',0,'머리로 잡지 않았어요. 부딪혔어요 → "맞았어요". 😵']]},
+   {ask:'정답을 말하면 배지를 ___ 수 있어요.',opts:[['받을',1],['맞을',0,'배지는 "받아요"! 정답이 "맞아요". 받다하고 맞다는 달라요.']]},
+   {ask:'"정답이에요!" = 정답이 ___.',opts:[['맞아요',1],['받아요',0,'정답이면 "맞아요"! 배지는 "받아요".']]},
+   {say:'완벽해요! 배지를 받았어요! 🏅',award:['받다']}]},
+ {id:'social',name:'사회 선생님',x:7,y:16,dir:'left',look:{hair:'#9A9AA3',skin:'#F1C9A5',shirt:'#5B8BD9',pants:'#3A3A48'},badge:['어른','예를 들다'],
+  after:'예를 들면… 이 학교 선생님들은 다 어른이에요! 😄',
+  talk:[
+   {say:'사회 선생님이에요. 오늘은 사람에 대해서 공부해요.'},
+   {w:'예를 들다',ask:'다른 예를 말해 주세요. 예를 ___ 주세요.',opts:[['들어',1],['드러',0,'들다 → 들어요. 예를 "들어" 주세요.']]},
+   {w:'예를 들다',ask:'"예를 ___, 사과하고 귤은 과일이에요."',opts:[['들면',1],['드르면',0,'들다 → 들면. "예를 들면"!'],['들으면',0,'"들으면"은 "듣다"예요 (소리를 들어요). 예 → "들면".']]},
+   {w:'어른',ask:'다 큰 사람이에요. 보통 말할 때 ___이라고 해요.',opts:[['어른',1],['청소년',0,'청소년은 10대예요. 다 큰 사람 → "어른".']]},
+   {w:'어른',ask:'영화관 표: "___ 15,000원, 청소년 12,000원". 공식적인 말은?',opts:[['성인',1],['어린이',0,'어린이는 아이예요. 표나 서류에는 "성인"을 많이 써요.']]},
+   {w:'어른',ask:'할머니한테 인사해요. "___께 인사해야 돼요."',opts:[['어른',1],['성인',0,'존경하는 느낌 → "어른". 성인은 법이나 서류에 써요.']]},
+   {say:'잘했어요! 예를 들면, 저도 어른이에요. 😊',award:['어른','예를 들다']}]},
+ {id:'principal',name:'교장 선생님',x:12,y:8,dir:'down',look:{hair:'#E8E8EE',skin:'#F1C9A5',shirt:'#2E3548',pants:'#2E3548',belt:'#F2C94C'},badge:[],
+  status:()=>done()<TEACH.length?'wait':state.graduated?undefined:'todo',
+  script:()=>{
+   if(done()<TEACH.length)return [{say:`어서 와요! 저는 교장이에요. 선생님 ${TEACH.length-done()}명을 더 만나 보세요. 🏫`}];
+   if(!state.graduated)return [
+    {say:'선생님들을 다 만났어요? 대단해요!'},
+    {say:'오늘 복습한 문장을 한 번 더 말해 볼까요?'},
+    {who:'당신',say:'이건 처음이자 마지막 기회예요. 다음엔 더 잘할 거예요!'},
+    {who:'당신',say:'감기는 다 나았어요. 고장 난 의자도 고쳤어요.'},
+    {who:'당신',say:'예를 들면, 정답이 맞으면 배지를 받아요!'},
+    {say:'완벽해요! 졸업장을 받으세요. 🎓',set:()=>{state.graduated=true}},
+    {say:'한국어 실력이 많이 개선됐어요. 축하해요! 🎉'}];
+   return [{say:'졸업 축하해요! 다음엔 더 어려운 단어를 공부해요. 🎓'}];
+  }},
+ ],
+});
+})();
+</script>
+<script>
+/* =====================================================================
+   카트리지 7편 · 한국 뉴스
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   You're the reporter again, now at a Seoul station. Real news from Oct 2–3, 2026:
+   Aichi-Nagoya Asian Games (men's recurve archery team gold, LoL team gold — both back-to-back),
+   bank hacking (Shinhan, KB, Hana, BNK Busan; FSC emergency meeting, Hana promises compensation),
+   and 한글날 (Oct 9 public holiday). Ending: stand on the ✕ in front of the camera and broadcast.
+   state.stage: 0 start · 1 interviewing · 2 go to the ✕ · 3 broadcast done
+   ===================================================================== */
+(()=>{
+const SOURCES=['archer','gamer','banker','expert','guide'];
+const done=()=>NPCS.filter(n=>SOURCES.includes(n.id)&&n.badge.every(has)).length;
+const go=n=>()=>{state.stage=n};
+const EDIT=[
+ {w:'기자',ask:'파고에서도 했어요! 뉴스를 취재하는 사람은 ___예요.',opts:[['기자',1],['앵커',0,'앵커는 방송에서 뉴스를 읽어요. 밖에서 취재해요 → "기자".'],['관중',0,'관중은 경기를 보는 사람이에요. 뉴스를 취재해요 → "기자".']]},
+ {w:'취재하다',ask:'기자가 사람들을 만나서 이야기를 듣고 알아봐요. 기자가 ___.',opts:[['취재해요',1],['보상해요',0,'보상은 피해를 돈으로 갚아요. 뉴스를 알아봐요 → "취재해요".'],['유출돼요',0,'유출은 정보가 밖으로 새요. 뉴스를 알아봐요 → "취재해요".']]},
+ {w:'취재하다',ask:'"취재"하고 "보도", 뭐가 먼저예요?',opts:[['취재가 먼저, 보도는 나중',1],['보도가 먼저, 취재는 나중',0,'먼저 알아봐요(취재). 그다음 뉴스로 알려요(보도).']]},
+ {w:'보도하다',ask:'카메라 앞이에요. 이제 뉴스를 ___ 시간이에요!',opts:[['보도할',1],['취재할',0,'취재는 벌써 했어요! 이제 뉴스로 알려요 → "보도할".'],['유출할',0,'😄 뉴스는 유출 안 해요! 알려요 → "보도할".']]},
+ {w:'보도하다',ask:'"보도"는 뜻이 두 개였어요. 뉴스 말고 하나 더는?',opts:[['사람이 걷는 길',1],['사람이 타는 차',0,'보도(步道)는 사람이 걷는 길이에요. 파고 뉴스에서 배웠어요!']]},
+];
+const ARCH=[
+ {w:'금메달',ask:'1등은 금메달. 2등은 ___이에요.',opts:[['은메달',1],['동메달',0,'동메달은 3등이에요. 1등 금, 2등 "은", 3등 동!']]},
+ {w:'금메달',ask:'"금빛 활"은 무슨 뜻이에요?',opts:[['금메달을 딴 활 솜씨',1],['금으로 만든 활',0,'진짜 금이 아니에요! 금메달처럼 빛나는 활 솜씨예요.']]},
+ {w:'결승',ask:'마지막 경기예요. 이기면 금메달이에요. 이 경기는 ___이에요.',opts:[['결승',1],['결석',0,'결석은 학교에 안 가요! 마지막 경기 → "결승".'],['준결승',0,'준결승은 결승 바로 전이에요. 마지막 경기 → "결승".']]},
+ {w:'결승',ask:'한국 남자 양궁 대표팀은 결승에서 누구를 이겼어요?',opts:[['인도',1],['대만',0,'대만은 LoL 결승 상대예요. 양궁은 "인도"를 이겼어요.']]},
+];
+const GAME=[
+ {w:'연패',ask:'지난 아시안게임에서도 금메달, 이번에도 금메달! 2___예요.',opts:[['연패',1],['결승',0,'결승은 마지막 경기예요. 두 번 연속 우승 → "2연패".']]},
+ {w:'연패',ask:'조심! "연패"는 뜻이 두 개예요. "3연패 했어요. 너무 슬퍼요." 무슨 뜻이에요?',opts:[['세 번 연속 졌어요.',1],['세 번 연속 이겼어요.',0,'슬퍼요 → 졌어요! 連敗는 계속 져요. 連霸는 계속 이겨요. 글로 보면 똑같아요! 😄']]},
+ {w:'연패',ask:'LoL 대표팀은 결승에서 대만을 몇 대 몇으로 이겼어요?',opts:[['3 대 0',1],['3 대 2',0,'한 세트도 안 졌어요! "3 대 0"이에요.']]},
+];
+const BANK=[
+ {w:'개인정보',ask:'이름, 주소, 전화번호, 이메일… 나에 대한 이런 정보는 ___예요.',opts:[['개인정보',1],['신분증',0,'신분증은 카드예요. 나에 대한 정보 → "개인정보".'],['일자리',0,'일자리는 일하는 곳이에요. 나에 대한 정보 → "개인정보".']]},
+ {w:'개인정보',ask:'"개인"은 무슨 뜻이에요?',opts:[['한 사람',1],['많은 사람',0,'개인(個人)은 한 사람이에요. 반대는 "단체".']]},
+ {w:'보상하다',ask:'은행 잘못으로 손님이 돈을 잃었어요. 은행이 그 돈을 다 ___.',opts:[['보상해요',1],['보도해요',0,'보도는 기자가 뉴스로 알려요. 피해를 돈으로 갚아요 → "보상해요".'],['저장해요',0,'저장은 남겨 둬요. 피해를 돈으로 갚아요 → "보상해요".']]},
+ {w:'보상하다',ask:'"피해"는 무슨 뜻이에요?',opts:[['나쁜 일로 손해를 봤어요.',1],['좋은 선물을 받았어요.',0,'피해는 나쁜 거예요! 해킹 피해, 비 피해… 손해를 봤어요.']]},
+];
+const SEC=[
+ {w:'해킹',ask:'나쁜 사람이 몰래 다른 컴퓨터에 들어가요. 그건 ___이에요.',opts:[['해킹',1],['저장',0,'저장은 파일을 남겨요. 몰래 들어가요 → "해킹".'],['취재',0,'취재는 기자가 해요! 몰래 들어가요 → "해킹".']]},
+ {w:'해킹',ask:'이번 해킹 뉴스에 나온 은행이 아닌 곳은?',opts:[['파고 은행',1],['하나은행',0,'하나은행도 해킹 피해가 있었어요. 신한, 국민, 하나, 부산은행이에요.']]},
+ {w:'유출되다',ask:'정보가 밖으로 새어 나갔어요. 개인정보가 ___.',opts:[['유출됐어요',1],['보상됐어요',0,'보상은 피해를 갚아요. 밖으로 새어 나갔어요 → "유출됐어요".'],['개선됐어요',0,'개선은 좋아져요. 😅 밖으로 새어 나갔어요 → "유출됐어요".']]},
+ {w:'유출되다',ask:'해커가 정보를 밖으로 빼냈어요. 해커가 정보를 ___. (내가 했어요)',opts:[['유출했어요',1],['유출됐어요',0,'"되다"는 혼자 그렇게 됐어요. 해커가 했어요 → "유출했어요". 개선하다/개선되다랑 같아요!']]},
+];
+const HAN=[
+ {w:'공휴일',ask:'학교도 회사도 쉬어요. 나라에서 정한 쉬는 날이에요. 그건 ___이에요.',opts:[['공휴일',1],['주말',0,'주말은 토요일, 일요일이에요. 나라가 정한 쉬는 날 → "공휴일".'],['생일',0,'생일은 태어난 날이에요. 나라가 정한 쉬는 날 → "공휴일".']]},
+ {w:'공휴일',ask:'한글날은 언제예요?',opts:[['10월 9일',1],['10월 3일',0,'10월 3일은 개천절이에요. 이것도 공휴일이에요! 한글날은 "10월 9일".']]},
+ {w:'기념하다',ask:'중요한 날을 잊지 않으려고 특별하게 보내요. 그날을 ___.',opts:[['기념해요',1],['보상해요',0,'보상은 피해를 갚아요. 중요한 날을 특별하게 → "기념해요".']]},
+ {w:'기념하다',ask:'한글날에는 무엇을 기념해요?',opts:[['세종대왕이 한글을 만든 것',1],['한국 축구가 이긴 것',0,'한글날은 한글을 기념해요. 세종대왕이 1443년에 만들었어요.']]},
+ {w:'기념하다',ask:'여행에서 산 작은 물건은 "___품"이에요.',opts:[['기념',1],['공휴',0,'여행을 기억하는 물건 → "기념품". 공휴일은 쉬는 날이에요.']]},
+];
+
+CARTRIDGES.push({
+ id:'c7', n:'7편', title:'한국 뉴스', color:'#3E7F78', save:'daneo-maul-v7',
+ words:[['기자','reporter'],['취재하다','to cover (news)'],['보도하다','to report'],['금메달','gold medal'],['결승','final (match)'],['연패','back-to-back wins / losses'],['개인정보','personal info'],['보상하다','to compensate'],['해킹','hacking'],['유출되다','to be leaked'],['공휴일','public holiday'],['기념하다','to commemorate']],
+ start:{x:10,y:8,dir:'down'},
+ fresh:{stage:0},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['<b>취재</b>(알아봐요) → <b>보도</b>(알려요)','금메달 1등 · 은메달 2등 · 동메달 3등 · <b>결승</b> = 마지막 경기','<b>연패</b> 두 개! 連霸 계속 이겨요 · 連敗 계속 져요','<b>유출되다</b>: 정보가 새어 나가요 · 해커가 <b>유출하다</b>','<b>보상하다</b>: 피해를 돈으로 갚아요','<b>공휴일</b>: 나라가 정한 쉬는 날 · 한글날 10월 9일','<b>기념하다</b> · 기념일 · 기념품'],
+ intro:['단어 마을 7편! 이번엔 한국 뉴스예요. 🇰🇷📰','당신은 다시 기자예요. 이번엔 서울 방송국이에요!','먼저 방송국에 가서 편집장을 만나요.'],
+ done:['축하해요! 배지 열두 개를 다 모았어요! 🎉','기자, 취재하다, 보도하다, 금메달, 결승, 연패, 개인정보, 보상하다, 해킹, 유출되다, 공휴일, 기념하다!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열두 개! 모든 단어가 완벽해요!','한국 뉴스 기자로 금메달이에요! 🥇'],
+
+ quest(){
+  if(state.stage===0)return {text:'📺 서울 방송국에 가서 편집장을 만나요.'};
+  if(state.stage===1){const n=done();return n<SOURCES.length?{text:`🎤 한국 뉴스를 취재해요! ${n}/${SOURCES.length}`}:{late:true,text:'📺 취재 끝! 방송국에 가서 편집장한테 말해요.'}}
+  if(state.stage===2)return {late:true,text:'🎥 카메라 앞 ✕ 표시에 서세요. 방송 시작!'};
+  return null;
+ },
+ onStep(){
+  if(state.stage!==2||player.x!==7||player.y!==4)return;
+  held=null;player.dir='left';
+  openDialog('감독',[
+   {say:'기자님, 준비됐어요? 카메라를 보세요! 🎥'},
+   EDIT[3],EDIT[4],
+   {say:'좋아요! 셋, 둘, 하나… 큐! 🔴',award:['보도하다']},
+   {who:'당신',say:'안녕하십니까, 한국 뉴스입니다.'},
+   {who:'당신',say:'아이치·나고야 아시안게임에서 한국 남자 양궁 대표팀이 결승에서 인도를 이기고 금메달을 땄습니다.'},
+   {who:'당신',say:'리그 오브 레전드 대표팀도 대만을 3 대 0으로 이기고 2연패를 했습니다.'},
+   {who:'당신',say:'한편, 신한, 국민, 하나, 부산은행이 해킹을 당해 개인정보가 유출됐습니다. 은행은 피해를 보상하겠다고 했습니다.'},
+   {who:'당신',say:'다음 주 10월 9일은 한글날입니다. 공휴일입니다. 지금까지 한국 뉴스였습니다!',set:go(3)},
+   {who:'편집장',say:'완벽해요! 서울에서도 최고의 기자예요. 👏'}]);
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'N':{tile:'stationWall'},'=':{tile:'wood',walk:1},'e':{tile:'desk',over:1},'m':{tile:'tvcam'},'x':{tile:'mark',walk:1},
+  'K':{tile:'bankWall'},'V':{tile:'bigScreen'},'M':{tile:'museumWall'},'Q':{tile:'statue'},'_':{tile:'sand',walk:1},
+  '~':{tile:'pond'},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.NNNNNNNN.....KKKKKKKK..T",
+"T.N======N.....KKKKKKKK..T",
+"T.N=e=mx=N.....KKKKKKKK..T",
+"T.N======N.....KKKKKKKK..T",
+"T.NNN=NNNN.....KKKKKKKK..T",
+"T....,.p...p.....,.p.....T",
+"T....,,,,,,,,,,,,,,,,,,..T",
+"T........~~~~............T",
+"T..**....~~~~........**..T",
+"T....,,,,,,,,,,,,,,,,,,..T",
+"T..VVVVVV.......MMMMMMM..T",
+"T..VVVVVV.......MMMMMMM..T",
+"T..______.......MMMMMMM..T",
+"T..______.........Q......T",
+"T..______................T",
+"T........................T",
+"T........................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '11,7':['표지판','단어 마을 7편 · 한국 뉴스! 배지 열두 개를 모아요.'],
+ '7,7':['표지판','서울 방송국 · 오늘의 한국 뉴스 📺'],
+ '19,7':['표지판','은행 · 오늘은 보안 점검 중이에요. 🔒'],
+ },
+ things:{
+  T:sayAt(...TREES),
+  e:()=>[{say:'편집장 책상이에요. 오늘 뉴스 원고가 있어요. 📝'}],
+  m:()=>[{say:state.stage===2?'카메라 앞 ✕ 표시에 서세요! 🎥':'방송 카메라예요. 🎥'}],
+  N:sayAt('서울 방송국이에요. 📺','방송국 벽이에요. 안에서 "큐!" 소리가 나요.'),
+  K:sayAt('은행이에요. 🏦 문 앞에 "보안 점검 중" 종이가 있어요.','은행 벽이에요. 경비원이 많아요. 🔒','창문 안에서 직원들이 바빠요.'),
+  V:sayAt('큰 화면이에요! 아시안게임 경기가 나와요. 📺🏹','화면에 "금메달!" 글자가 나와요. 🥇','LoL 결승이에요! 관중들이 소리 질러요. 🎮'),
+  M:sayAt('한글 박물관이에요. 📜','박물관 벽에 "ㄱ ㄴ ㄷ ㄹ" 이 있어요.','안에 옛날 책이 많아요.'),
+  Q:()=>[{say:'세종대왕 동상이에요. 한글을 만든 왕이에요. 👑'}],
+  '~':sayAt('연못이에요. 한강은 아니에요. 😄','연못에 휴대폰이 빠졌어요! 개인정보는 안전해요… 아마도. 📱💦'),
+ },
+
+ npcs:[
+ {id:'editor',name:'편집장',x:4,y:3,dir:'down',still:1,look:{hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#3E7F78',pants:'#2E3548',long:1},badge:['기자','취재하다'],
+  after:'좋은 뉴스 고마워요. 다음 취재도 부탁해요! 📰',
+  pool:EDIT.slice(0,3),
+  status:()=>(state.stage===1&&done()<SOURCES.length)||state.stage===2?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [
+    {say:'어서 와요! 서울 방송국이에요. 📺'},
+    {say:'파고 뉴스, 잘 봤어요! 우리 방송국에서도 기자를 해 주세요.'},
+    EDIT[0],EDIT[1],EDIT[2],
+    {say:'좋아요! 기자증을 받으세요. 🪪',award:['기자','취재하다'],set:go(1)},
+    {say:'이번 주 한국 뉴스가 많아요. 아시안게임, 은행 해킹, 한글날!'},
+    {say:'다섯 명을 취재해 오세요. 광장, 은행, 박물관에 가 보세요.'}];
+   if(state.stage===1&&done()<SOURCES.length)return [{say:`아직 취재 중이에요? 지금 ${done()}명 했어요. 다섯 명 다 만나 보세요!`}];
+   if(state.stage===1)return [
+    {say:'다 취재했어요? 수고했어요!'},
+    {say:'이제 보도할 시간이에요. 카메라 앞 ✕ 표시에 서세요! 🎥',set:go(2)}];
+   if(state.stage===2)return [{say:'카메라 앞 ✕ 표시에 서세요! 방송 시작해요. 🎥'}];
+   return null;
+  }},
+ {id:'anchor',name:'앵커',x:7,y:3,dir:'down',look:{hair:'#1E1E24',skin:'#F1C9A5',shirt:'#D9544B',pants:'#2E3548'},
+  talk:[{say:'저는 앵커예요. 파고에서 온 기자님이죠? 반가워요! 🎙️'},{say:'기자가 취재하고, 앵커가 보도해요. 오늘은 기자님이 직접 보도해요!'}]},
+ {id:'archer',name:'양궁 팬',x:5,y:15,dir:'up',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#F2C94C',pants:'#2E3548',cap:'#D9544B'},badge:['금메달','결승'],
+  after:'한국 양궁 최고! 🏹🥇',
+  pool:ARCH,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'와! 아시안게임 봐요! 🏹 (화면만 봐요.)'}]:null,
+  talk:[
+   {say:'기자님! 방금 봤어요? 양궁이에요! 🏹'},
+   {say:'아이치·나고야 아시안게임, 남자 양궁 단체전이에요.'},
+   ARCH[2],ARCH[3],
+   {say:'김우진, 이우석, 김제덕 선수! 흔들림이 없었어요.'},
+   ARCH[0],ARCH[1],
+   {say:'지난 아시안게임에 이어서 또 금메달이에요!',award:['금메달','결승']}]},
+ {id:'gamer',name:'e스포츠 팬',x:7,y:16,dir:'up',look:{hair:'#C0582E',skin:'#F3D0B0',shirt:'#8E7CC3',pants:'#3A3F55',long:1},badge:['연패'],
+  after:'다음 아시안게임은 3연패! 🎮',
+  pool:GAME,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'쉿! 지금 LoL 결승이에요! 🎮'}]:null,
+  talk:[
+   {say:'기자님, 리그 오브 레전드 결승 봤어요? 🎮'},
+   {say:'한국 대표팀이 대만을 이겼어요! 한 세트도 안 졌어요.'},
+   GAME[2],GAME[0],GAME[1],
+   {say:'우리 대표팀은 좋은 연패예요! 계속 이겨요. 😄',award:['연패']}]},
+ {id:'fan',name:'관중',x:4,y:14,dir:'up',still:1,look:{hair:'#1F1F1F',skin:'#DDAE85',shirt:'#5B8BD9',pants:'#333'},
+  talk:[{say:'대한민국! 짝짝짝 짝짝! 👏'},{say:'오늘 금메달이 두 개예요!'}]},
+ {id:'banker',name:'은행원',x:17,y:7,dir:'down',look:{hair:'#3B2A22',skin:'#F3D0B0',shirt:'#2E3548',pants:'#2E3548',long:1},badge:['개인정보','보상하다'],
+  after:'고객님 정보는 저희가 꼭 지킬게요. 🔒',
+  pool:BANK,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'죄송해요. 지금 바빠요. 🏦'}]:null,
+  talk:[
+   {say:'기자님, 안녕하세요. 은행원이에요. 요즘 정말 바빠요. 🏦'},
+   {say:'여러 은행이 해킹을 당했어요. 손님 정보가 밖으로 나갔어요.'},
+   BANK[0],BANK[1],
+   {say:'하나은행은 손님 89명 정보가 나갔어요. 이름, 주소, 전화번호…'},
+   {say:'그래도 인터넷 뱅킹하고 모바일 뱅킹은 따로 있어서 괜찮다고 했어요.'},
+   BANK[3],BANK[2],
+   {say:'피해가 생기면 은행이 다 보상한다고 했어요.',award:['개인정보','보상하다']}]},
+ {id:'grandma',name:'할머니',x:21,y:7,dir:'down',still:1,look:{hair:'#E8E8EE',skin:'#F1C9A5',shirt:'#B5654A',pants:'#5A3A22',long:1},
+  talk:[{say:'아이고, 내 개인정보도 유출됐을까? 걱정돼요…'},{say:'모르는 전화나 문자는 조심해야 돼요!'}]},
+ {id:'expert',name:'보안 전문가',x:13,y:9,dir:'down',look:{hair:'#1E1E24',skin:'#E8B98F',shirt:'#3FA86B',pants:'#2E3548',cap:'#2E3548'},badge:['해킹','유출되다'],
+  after:'비밀번호는 자주 바꾸세요! 🔐',
+  pool:SEC,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'보안 이야기요? 기자님한테만 말할 거예요. 🔐'}]:null,
+  talk:[
+   {say:'저는 보안 전문가예요. 컴퓨터를 지켜요. 🔐'},
+   SEC[0],SEC[1],
+   {say:'신한은행은 2만 5천 명이 넘어요. 국민은행도 피해가 있었어요.'},
+   {say:'요즘은 AI로 하는 해킹도 있다고 해요.'},
+   SEC[2],SEC[3],
+   {say:'금융위원회가 긴급 회의를 했어요. 모든 시스템을 점검해요.',award:['해킹','유출되다']}]},
+ {id:'guide',name:'해설사',x:20,y:15,dir:'down',look:{hair:'#5A3A22',skin:'#F1C9A5',shirt:'#F6A5B8',pants:'#3A3A48',long:1},badge:['공휴일','기념하다'],
+  after:'한글날에 박물관에 놀러 오세요! 📜',
+  pool:HAN,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'한글 박물관에 어서 오세요! 📜'}]:null,
+  talk:[
+   {say:'기자님, 한글 박물관에 어서 오세요! 📜'},
+   {say:'다음 주 금요일, 10월 9일은 한글날이에요.'},
+   HAN[0],HAN[1],
+   {say:'세종대왕이 한글을 만들었어요. 그래서 한글날에 그걸 기억해요.'},
+   HAN[2],HAN[3],HAN[4],
+   {say:'공휴일에 박물관은 문을 열어요. 사람이 많을 거예요!',award:['공휴일','기념하다']}]},
  ],
 });
 })();
@@ -1271,6 +1642,22 @@ const TILES={
    if(at(x,y-1)!==me&&at(x,y-1)!=='v'){grass(X,Y,x,y);const o=Math.min(12,Math.abs(x-18)*3);r(X,Y+o,16,16-o,'#D9DEE7');r(X,Y+o,16,2,'#F4F6FA')}
    else{r(X,Y,16,16,'#D9DEE7');r(X+3,Y,1,16,'#BFC6D3');r(X+11,Y,1,16,'#BFC6D3');r(X,Y+8,16,1,'#BFC6D3')}
    if(y===3&&x>=15&&x<=21)r(X,Y+10,16,3,'#3E7F4A')},
+ /* 6편 */
+ schoolWall:(X,Y,x,y)=>{const me=at(x,y);r(X,Y,16,16,'#F3E3C3');for(let i=0;i<4;i++)r(X,Y+i*4+3,16,1,'#E2CDA4');if(at(x,y-1)!==me){r(X,Y,16,4,'#3E7F4A');r(X,Y+4,16,1,'#2C5F36')}
+   if(front(x,y)&&!walkable(x,y+1)&&x%2===1){r(X+3,Y+5,10,7,'#6B4A2B');r(X+4,Y+6,8,5,'#CFE3F5');r(X+8,Y+6,1,5,'#6B4A2B')}
+   if(at(x,y-1)!==me&&(x===6||x===19)){r(X+4,Y+1,8,8,'#FFFFFF');r(X+4,Y+1,8,1,'#1B1E2B');r(X+4,Y+8,8,1,'#1B1E2B');r(X+4,Y+1,1,8,'#1B1E2B');r(X+11,Y+1,1,8,'#1B1E2B');r(X+8,Y+2,1,3,'#1B1E2B');r(X+8,Y+4,3,1,'#D9544B')}},
+ board:(X,Y,x,y)=>{wood(X,Y,x,y);r(X,Y+1,16,10,'#6B4A2B');r(X,Y+2,16,8,'#2F5D4A');const h=hash(x,y);r(X+2,Y+4,5+h%5,1,'#E8ECF2');r(X+3,Y+7,7-h%4,1,'#E8ECF2');r(X,Y+11,16,1,'#9A6A3C');r(X+12,Y+10,3,1,'#FFFFFF')},
+ easel:(X,Y,x,y)=>{grass(X,Y,x,y);r(X+4,Y+10,1,6,'#6B4A2B');r(X+11,Y+10,1,6,'#6B4A2B');r(X+7,Y+11,2,5,'#6B4A2B');r(X+2,Y+1,12,10,'#6B4A2B');r(X+3,Y+2,10,8,'#FFFFFF');r(X+4,Y+3,4,5,'#D9544B');r(X+8,Y+4,4,5,'#4F7BD6')},
+ /* 7편 */
+ bankWall:(X,Y,x,y)=>{const me=at(x,y);r(X,Y,16,16,'#C9CED8');r(X+2,Y,2,16,'#B3B9C6');r(X+12,Y,2,16,'#B3B9C6');if(at(x,y-1)!==me){r(X,Y,16,5,'#2E3548');r(X,Y+5,16,1,'#1B1E2B');if(x===19){r(X+5,Y+1,6,3,'#F2C94C');r(X+7,Y+2,2,1,'#2E3548')}}
+   if(front(x,y)){if(x===17){r(X+3,Y+4,10,12,'#2E3548');r(X+4,Y+5,8,11,'#8CCBF5');r(X+8,Y+5,1,11,'#2E3548')}else if(x%2===0){r(X+4,Y+5,8,7,'#2E3548');r(X+5,Y+6,6,5,'#BFE3F5')}}},
+ bigScreen:(X,Y,x,y,t)=>{const me=at(x,y);r(X,Y,16,16,'#1B1E2B');const top=at(x,y-1)!==me,bot=at(x,y+1)!==me;
+   if(top)r(X,Y,16,2,'#3E4A63');if(bot){r(X,Y+13,16,3,'#3E4A63');if(x===5||x===6)r(X+6,Y+13,4,3,'#6B7390')}
+   const f=Math.floor(t/600)%2;r(X+1,Y+(top?2:0),14,bot?13-(top?2:0):16-(top?2:0),f?'#3FA86B':'#2F8A57');
+   if(x===4&&top){r(X+2,Y+3,12,12,'#FFFFFF');r(X+3,Y+4,10,10,'#1B1E2B');r(X+4,Y+5,8,8,'#4F7BD6');r(X+5,Y+6,6,6,'#D9544B');r(X+6,Y+7,4,4,'#F2C94C')}if(x===5&&top){r(X,Y+9,12,1,'#E8ECF2');r(X+11,Y+8,3,3,'#D9544B')}if(x===8&&top){r(X+3,Y+3,10,4,'#D9544B');r(X+4,Y+4,1,2,'#fff');r(X+6,Y+4,1,2,'#fff');r(X+8,Y+4,2,2,'#fff');r(X+11,Y+4,1,2,'#fff')}if(x===3&&!top){r(X+4,Y+2,1,8,'#F4F4F4');r(X+3,Y+5,8,1,'#F4F4F4')}if(x===7&&top){for(let i=0;i<3;i++)r(X+3+i*4,Y+9,2,2,'#FFFFFF')}},
+ museumWall:(X,Y,x,y)=>{const me=at(x,y);r(X,Y,16,16,'#EDE3D0');r(X,Y+15,16,1,'#CDBF9F');if(at(x,y-1)!==me){r(X-1,Y,18,4,'#5A3A22');r(X,Y+4,16,2,'#8A5A33');r(X+2,Y+1,12,1,'#7A4E2E')}
+   if(front(x,y)){r(X+2,Y+3,2,13,'#D8C9A8');r(X+12,Y+3,2,13,'#D8C9A8');if(x===19){r(X+5,Y+5,6,11,'#5A3A22')}else if(x%2===0){r(X+5,Y+6,6,6,'#5A3A22');r(X+6,Y+7,4,4,'#F7E7C8');r(X+7,Y+8,2,1,'#5A3A22');r(X+7,Y+9,1,2,'#5A3A22')}}},
+ statue:(X,Y,x,y)=>{grass(X,Y,x,y);r(X+2,Y+12,12,4,'#9AA3B5');r(X+3,Y+11,10,1,'#B4BCCC');r(X+4,Y+4,8,7,'#7A6A3A');r(X+5,Y+5,6,5,'#9A8A4A');r(X+5,Y+0,6,5,'#7A6A3A');r(X+6,Y+1,4,3,'#B8A458');r(X+4,Y+0,8,1,'#5A4A2A');r(X+10,Y+6,3,2,'#E8ECF2')},
  mark:(X,Y,x,y)=>{wood(X,Y,x,y);for(let i=0;i<10;i++){r(X+3+i,Y+3+i,2,2,'#D9544B');r(X+12-i,Y+3+i,2,2,'#D9544B')}},
  domeDoor:(X,Y)=>{r(X,Y,16,16,'#D9DEE7');r(X+2,Y+3,12,13,'#3E4A63');r(X+7,Y+3,2,13,'#9AA3B5');r(X+2,Y+3,12,1,'#2A2F4A')},
  candyWall:(X,Y,x,y)=>{const me=at(x,y);r(X,Y,16,16,'#F6C3D0');r(X,Y+15,16,1,'#D99AAD');if(at(x,y-1)!==me){r(X,Y,16,4,'#8A4B5E');r(X,Y+4,16,1,'#6E3A4A')}
@@ -1391,7 +1778,7 @@ let last=performance.now();
 function loop(now){const dt=Math.min(50,now-last);last=now;if(C){update(dt,now);render(now)}requestAnimationFrame(loop)}
 
 /* ---------- dialogue ---------- */
-let dlg=null,typing=null,pendingCelebrate=null,sel=0;
+let dlg=null,typing=null,pendingCelebrate=null,sel=0,gen=0; // gen: bumped on reset/boot so late timers from the old run do nothing
 function openDialog(name,steps,opts={}){
   dlg={name,steps:steps.map(s=>({...s})),i:0,cur:null,next:null,miss:0,npc:opts.npc||null};
   $('tag').hidden=!opts.review;
@@ -1501,8 +1888,8 @@ function advance(){
 let offerNext=false;
 function closeDialog(){
   dlg=null;clearInterval(typing?.id);$('dlg').hidden=true;
-  if(pendingCelebrate){const c=pendingCelebrate;pendingCelebrate=null;setTimeout(()=>{if(!dlg)openDialog('단어 마을',c)},500);return}
-  if(offerNext){offerNext=false;const i=CARTRIDGES.indexOf(C);if(i<CARTRIDGES.length-1)setTimeout(()=>{if(!dlg)openMenu(i+1)},600)}
+  if(pendingCelebrate){const c=pendingCelebrate,g=gen;pendingCelebrate=null;setTimeout(()=>{if(!dlg&&g===gen)openDialog('단어 마을',c)},500);return}
+  if(offerNext){offerNext=false;const i=CARTRIDGES.indexOf(C);const g=gen;if(i<CARTRIDGES.length-1)setTimeout(()=>{if(!dlg&&g===gen)openMenu(i+1)},600)}
 }
 function cancel(){
   if(!$('gloss').hidden){hideGloss();return}
@@ -1603,7 +1990,7 @@ function loadState(){
 function boot(id){
   const next=CARTRIDGES.find(c=>c.id===id)||CARTRIDGES[0];
   if(dlg){dlg=null;clearInterval(typing?.id);$('dlg').hidden=true}
-  pendingCelebrate=null;held=null;$('panel').hidden=true;$('toast').hidden=true;
+  gen++;offerNext=false;pendingCelebrate=null;held=null;$('panel').hidden=true;$('toast').hidden=true;
   C=next;
   MAP=C.map.map(r=>r.split(''));MW=MAP[0].length;MH=MAP.length;
   NPCS=C.npcs;NPCS.forEach(n=>{n.home=n.home||n.dir;n.turnAt=performance.now()+2000+Math.random()*3000});
@@ -1661,7 +2048,14 @@ $('cartPanel').addEventListener('click',e=>{if(e.target.id==='cartPanel')closeMe
 $('sndBtn').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('daneo-maul-sound',soundOn?'1':'0')}catch(e){}updateSound();sfx('ok')});
 $('closePanel').addEventListener('click',()=>$('panel').hidden=true);
 $('panel').addEventListener('click',e=>{if(e.target.id==='panel')$('panel').hidden=true});
-$('resetBtn').addEventListener('click',()=>{state=fresh();state.seenIntro=true;Object.assign(player,{x:state.x,y:state.y,dir:state.dir,moving:false});petReset();pet.on=false;save();updateHud();updateQuest();$('panel').hidden=true;toast('처음부터 시작해요!')});
+$('resetBtn').addEventListener('click',()=>{
+  /* start over: stop whatever is on screen, wipe this cartridge's save and log, then play the intro again */
+  gen++;offerNext=false;pendingCelebrate=null;held=null;
+  if(dlg){dlg=null;clearInterval(typing?.id);$('dlg').hidden=true}
+  hideGloss();$('panel').hidden=true;$('toast').hidden=true;
+  try{localStorage.removeItem(C.save);localStorage.removeItem(C.save+'-talk')}catch(e){}
+  boot(C.id);sfx('cart');
+});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 /* stop the phone's long-press gesture (the delayed buzz) on the controls; pointer events still fire */
 document.querySelector('.pad').addEventListener('touchstart',e=>{if(e.cancelable)e.preventDefault()},{passive:false});
