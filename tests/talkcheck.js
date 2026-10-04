@@ -8,6 +8,9 @@ window.__play=async function(){
   $('talkBtn').click();await wait(200);const k=$('talkList').querySelectorAll('.tl').length;check(!$('talkPanel').hidden&&k>=4,'log lists '+k+' lines');await shot('talk');
   $('talkList').querySelector('.w').click();await wait(120);check(!$('gloss').hidden,'tapping a word in the log opens the dictionary');await shot('talk-tap');
   cancel();cancel();check($('talkPanel').hidden,'B closes the popup, then the log');
+  $('tapBtn').click();await wait(200);const tp=$('tapList').querySelectorAll('.tp');check(!$('tapPanel').hidden&&tp.length>=1,'사전 lists '+tp.length+' looked-up word(s): '+(tp[0]?.querySelector('.tph')?.textContent||''));
+  if(tp[0]){tp[0].click();await wait(60);check(!tp[0].querySelector('.tpe').hidden,'tapping it shows the English')}await shot('taps');
+  cancel();check($('tapPanel').hidden,'B closes 사전');
   location.reload;loadTalk();check(talk.length===k,'the log is saved with the cartridge');
  }catch(e){ERR.push('check: '+e.message)}
  window.__done=true;console.log('DONE');
