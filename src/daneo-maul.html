@@ -206,6 +206,7 @@ body.talkopen .gloss{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px
       <button class="mi wide cartmi" id="cartMi"><span class="cartbtn" id="cartBtn" aria-hidden="true"><span class="cl">1편</span></span>카트리지 바꾸기</button>
       <button class="mi toggle" id="sndBtn" aria-pressed="true">소리</button>
       <button class="mi" id="srcBtn" hidden>뉴스 출처</button>
+      <button class="mi wide" id="linkBtn">이 편 링크 복사</button>
     </div>
     <div class="games"><span>다른 게임</span><a href="https://stan-stani.github.io/seongsilho/" target="_blank" rel="noopener">성실호</a><a href="https://stan-stani.github.io/hyeongje/" target="_blank" rel="noopener">형제</a><a href="https://stan-stani.github.io/dogam-yeohaeng/" target="_blank" rel="noopener">도감 여행</a><a href="https://stan-stani.github.io/banghu/" target="_blank" rel="noopener">방과 후</a></div>
   </div>
@@ -2135,7 +2136,9 @@ $('startPanel').addEventListener('click',e=>{if(e.target.id==='startPanel'){$('s
 /* 뉴스 출처: the real news a cartridge is based on (C.sources = [[Korean headline, url, site], …]) */
 function openSources(){const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   $('srcList').innerHTML=(C.sources||[]).map(([t,u,site])=>`<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t)}</a><small>${esc(site)}</small></li>`).join('');$('srcPanel').hidden=false}
-$('srcBtn').addEventListener('click',openSources);$('srcClose').addEventListener('click',()=>$('srcPanel').hidden=true);
+$('srcBtn').addEventListener('click',openSources);
+$('linkBtn').addEventListener('click',async()=>{const n=C.id.replace(/\D/g,''),u='https://stan-stani.github.io/daneo-maul/?편='+n;
+  try{await navigator.clipboard.writeText(u);toast(C.n+' 링크를 복사했어요!')}catch(e){prompt(C.n+' 링크',u)}});$('srcClose').addEventListener('click',()=>$('srcPanel').hidden=true);
 $('srcPanel').addEventListener('click',e=>{if(e.target.id==='srcPanel')$('srcPanel').hidden=true});
 $('cartClose').addEventListener('click',closeMenu);
 $('cartPanel').addEventListener('click',e=>{if(e.target.id==='cartPanel')closeMenu()});
@@ -2165,7 +2168,12 @@ addEventListener('keyup',e=>{if(KEYS[e.key]===held)held=null});
 /* ---------- start: newest cartridge ---------- */
 updateSound();
 let lastCart=null;try{lastCart=localStorage.getItem('daneo-maul-cart')}catch(e){}
-boot(CARTRIDGES.some(c=>c.id===lastCart)?lastCart:CARTRIDGES[0].id); // first visit: 1편; after that, the cartridge last played
+/* a link can open a given cartridge: ?편=3 (or ?cart=3, ?cart=c3, #3편) */
+function linkedCart(){
+  const q=new URLSearchParams(location.search),v=q.get('편')||q.get('cart')||decodeURIComponent(location.hash.slice(1));
+  const n=(String(v||'').match(/\d+/)||[])[0];return n&&CARTRIDGES.find(c=>c.id==='c'+n)?'c'+n:null;
+}
+boot(linkedCart()||(CARTRIDGES.some(c=>c.id===lastCart)?lastCart:CARTRIDGES[0].id)); // a link wins; else first visit 1편, after that the cartridge last played
 requestAnimationFrame(loop);
 </script>
 </body></html>
