@@ -96,6 +96,18 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
 .tl{display:flex;flex-direction:column;gap:1px}
 .tl .tw{font-family:var(--display);font-size:.85rem;color:var(--box-muted)}
 .tl .tt{font-family:var(--display);font-size:1.08rem;word-break:keep-all}
+.startrow{display:flex;justify-content:center;padding-top:8px}
+.start{font-family:var(--display);font-size:.8rem;letter-spacing:.12em;background:var(--shell-2);color:var(--muted);border:2px solid var(--edge);border-radius:999px;padding:6px 18px;cursor:pointer;transform:rotate(-18deg)}
+.start:active{transform:rotate(-18deg) translateY(2px)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mi{font-family:var(--display);font-size:1.1rem;padding:14px 10px;border-radius:10px;border:2px solid var(--box-edge);background:#fff;color:var(--box-ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.mi.wide{grid-column:1/-1}.mi[hidden]{display:none}
+.mi.toggle::after{content:' · 꺼짐';opacity:.65}.mi.toggle[aria-pressed="true"]::after{content:' · 켜짐'}
+.mi.toggle[aria-pressed="true"]{background:var(--box-edge);color:#fff}
+.cartmi .cartbtn{pointer-events:none}
+.srclist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.srclist a{color:var(--box-ink);font-family:var(--display);font-size:1.05rem;text-decoration:underline;text-underline-offset:3px}
+.srclist small{display:block;color:var(--box-muted);font-size:.8rem;margin-top:2px}
 .tapsort{display:flex;gap:6px}.tapsort .btn{padding:4px 12px;font-size:.9rem}.tapsort .btn.on{background:var(--box-edge);color:#fff}
 #tapCount{font-size:.9rem;color:var(--box-muted)}
 .tp{display:flex;flex-direction:column;gap:2px;cursor:pointer;padding-bottom:8px;border-bottom:1px solid rgba(0,0,0,.1)}
@@ -105,6 +117,8 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
 body.talkopen .gloss{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));z-index:20}
 .txt .w.hint{background:rgba(242,201,76,.35);box-shadow:0 0 0 2px rgba(242,201,76,.6);animation:tapPulse 1.3s ease-in-out infinite}
 @keyframes tapPulse{50%{background:rgba(242,201,76,.75)}}
+.gloss .gx{display:none;position:absolute;right:42px;top:8px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.18);color:inherit;font-size:1.1rem;line-height:1;cursor:pointer}
+.gloss.pinned .gx{display:block}.gloss.pinned{padding-right:82px}.gloss.pinned{outline:3px solid rgba(0,0,0,.25);outline-offset:-3px}
 .gloss .q.pulse{animation:qPulse 1.2s ease-in-out infinite}
 @keyframes qPulse{50%{transform:scale(1.18);box-shadow:0 0 0 4px rgba(31,36,51,.25)}}
 .taptip{display:inline-block;margin-left:6px;vertical-align:2px;font-size:.72rem;line-height:1.5;background:var(--box-edge);color:#fff;border-radius:999px;padding:0 8px;font-family:var(--display);pointer-events:none}
@@ -142,10 +156,6 @@ body.talkopen .gloss{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px
   <header>
     <h1>단어 마을</h1>
     <div class="hbtns">
-      <button class="cartbtn" id="cartBtn" aria-label="카트리지 바꾸기"><span class="cl">1편</span></button>
-      <button class="pill" id="sndBtn" aria-pressed="true" aria-label="소리">♪</button>
-      <button class="pill" id="tapBtn" aria-label="찾아본 말">사전</button>
-      <button class="pill" id="talkBtn" aria-label="대화 기록">대화</button>
       <button class="pill badge" id="badgeBtn">배지 0/0</button>
     </div>
   </header>
@@ -182,9 +192,28 @@ body.talkopen .gloss{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px
       <button class="A" id="btnA" aria-label="A 말하기">A</button>
     </div>
   </div>
+  <div class="startrow"><button class="start" id="startBtn" aria-label="메뉴">START</button></div>
   <div class="help" id="help"></div>
 </div>
 
+<div class="panel" id="startPanel" hidden>
+  <div class="sheet" role="dialog" aria-label="메뉴">
+    <h2>메뉴 <button class="btn" id="startClose">닫기</button></h2>
+    <div class="mgrid">
+      <button class="mi" id="talkBtn">대화</button>
+      <button class="mi" id="tapBtn">사전</button>
+      <button class="mi wide cartmi" id="cartMi"><span class="cartbtn" id="cartBtn" aria-hidden="true"><span class="cl">1편</span></span>카트리지 바꾸기</button>
+      <button class="mi toggle" id="sndBtn" aria-pressed="true">소리</button>
+      <button class="mi" id="srcBtn" hidden>뉴스 출처</button>
+    </div>
+  </div>
+</div>
+<div class="panel" id="srcPanel" hidden>
+  <div class="sheet" role="dialog" aria-label="뉴스 출처">
+    <h2>뉴스 출처 <button class="btn" id="srcClose">닫기</button></h2>
+    <ul class="srclist" id="srcList"></ul>
+  </div>
+</div>
 <div class="panel" id="tapPanel" hidden>
   <div class="sheet talksheet" role="dialog" aria-label="찾아본 말">
     <h2><span>찾아본 말 <small id="tapCount"></small></span><button class="btn" id="tapClose">닫기</button></h2>
@@ -1012,6 +1041,12 @@ const COP=[
 
 CARTRIDGES.push({
  id:'c5', n:'5편', title:'파고 뉴스', color:'#D9544B', save:'daneo-maul-v5',
+ sources:[['10월 6일 파고 특별 선거: 시 정부를 바꿀까요?','https://fargond.gov/city-government/departments/auditors/licensing-department/elections/2026-city-of-fargo-special-election','City of Fargo'],
+  ['파고 시민들이 시 정부 개편을 투표로 정해요','https://www.valleynewslive.com/2026/09/21/fargo-voters-decide-whether-overhaul-city-government/','Valley News Live'],
+  ['캐럴 위드먼 은퇴, 조카가 사탕 가게를 물려받아요','https://www.kvrr.com/news/local/carol-widman-retires-nephew-takes-over-fargos-family-candy-business/article_58db83a7-929c-46a8-87b8-8bb91848899b.html','KVRR'],
+  ['남쪽 파고 새 칙필레, 10월 8일 개업 · 소 옷 이벤트','https://www.valleynewslive.com/2026/10/01/new-fargo-chick-fil-a-hosting-opening-day-moove-in-party/','Valley News Live'],
+  ['도서관 사진 전시회 「노던 포커스 2026」','https://fargond.gov/city-government/departments/library/teens/northern-narratives-northern-focus','Fargo Public Library'],
+  ['파고 경찰, 도로 경주 단속을 늘려요','https://kfgo.com/2026/09/21/fargo-police-ramp-up-enforcement-against-street-racing-and-dangerous-driving/','KFGO']],
  words:[['기자','reporter'],['보도하다','to report (news)'],['선거','election'],['투표하다','to vote'],['찬성하다','to be in favor'],['은퇴하다','to retire'],['물려받다','to take over, inherit'],['개업하다','to open (a business)'],['일자리','job'],['전시회','exhibition'],['무료','free (no cost)'],['단속하다','to crack down']],
  start:{x:10,y:8,dir:'down'},
  fresh:{stage:0},
@@ -1397,6 +1432,10 @@ const HAN=[
 
 CARTRIDGES.push({
  id:'c7', n:'7편', title:'한국 뉴스', color:'#3E7F78', save:'daneo-maul-v7',
+ sources:[['남자 양궁 단체전, 인도를 이기고 금메달','https://imnews.imbc.com/news/2026/sports/article/6855438_36946.html','MBC 뉴스'],
+  ['리그 오브 레전드, 대만 3-0 · 아시안게임 2연패','https://www.newspim.com/news/view/20261002001017','뉴스핌'],
+  ['신한·국민·하나·부산은행 해킹으로 정보 유출','https://www.seoul.co.kr/news/economy/finance/2026/10/02/20261002500271','서울신문'],
+  ['한글날 (10월 9일)','https://ko.wikipedia.org/wiki/%ED%95%9C%EA%B8%80%EB%82%A0','위키백과']],
  words:[['기자','reporter'],['취재하다','to cover (news)'],['보도하다','to report'],['금메달','gold medal'],['결승','final (match)'],['연패','back-to-back wins / losses'],['개인정보','personal info'],['보상하다','to compensate'],['해킹','hacking'],['유출되다','to be leaked'],['공휴일','public holiday'],['기념하다','to commemorate']],
  start:{x:10,y:8,dir:'down'},
  fresh:{stage:0},
@@ -1760,7 +1799,7 @@ const npcAt=(x,y)=>NPCS.find(n=>n.x===x&&n.y===y);
 const walkable=(x,y)=>!!(C.legend[at(x,y)]||{}).walk;
 const blocked=(x,y)=>!walkable(x,y)||!!npcAt(x,y);
 const menuOpen=()=>!$('cartPanel').hidden;
-const panelOpen=()=>!$('panel').hidden||menuOpen()||!$('talkPanel').hidden||!$('tapPanel').hidden;
+const panelOpen=()=>!$('startPanel').hidden||!$('srcPanel').hidden||!$('panel').hidden||menuOpen()||!$('talkPanel').hidden||!$('tapPanel').hidden;
 
 function tryMove(){
   if(player.moving||!held||dlg||panelOpen())return;
@@ -1861,10 +1900,10 @@ function showWord(w){
   const rows=lexLookup(w);if(!rows.length){hideGloss();toast('사전에 없는 말이에요.');return}
   noteTap(rows);
   const el=$('gloss');
-  el.innerHTML=rows.map(([h,d])=>`<div><b>${h}</b>${d.k}<span class="en" hidden>${d.e||''}</span></div>`).join('')+'<button class="q" type="button" aria-label="영어로 보기">?</button>';
-  el.hidden=false;
+  el.innerHTML=rows.map(([h,d])=>`<div><b>${h}</b>${d.k}<span class="en" hidden>${d.e||''}</span></div>`).join('')+'<button class="q" type="button" aria-label="영어로 보기">?</button><button class="gx" type="button" aria-label="닫기">×</button>';
+  el.classList.remove('pinned');el.hidden=false;
   if(!explained.tapEnglish)el.querySelector('.q').classList.add('pulse'); // until the player has tried ? once
-  el.querySelector('.q').addEventListener('click',e=>{e.stopPropagation();if(firstTime('tapEnglish'))e.currentTarget.classList.remove('pulse');el.querySelectorAll('.en').forEach(x=>x.hidden=!x.hidden);clearTimeout(showWord.t);showWord.t=setTimeout(hideGloss,8000)});
+  el.querySelector('.q').addEventListener('click',e=>{e.stopPropagation();if(firstTime('tapEnglish'))e.currentTarget.classList.remove('pulse');el.querySelectorAll('.en').forEach(x=>x.hidden=!x.hidden);if(!el.classList.contains('pinned')){clearTimeout(showWord.t);showWord.t=setTimeout(hideGloss,8000)}});
   clearTimeout(showWord.t);showWord.t=setTimeout(hideGloss,6000);
 }
 function typeText(text,done){
@@ -1927,6 +1966,8 @@ function closeDialog(){
 }
 function cancel(){
   if(!$('gloss').hidden){hideGloss();return}
+  if(!$('startPanel').hidden){$('startPanel').hidden=true;return}
+  if(!$('srcPanel').hidden){$('srcPanel').hidden=true;return}
   if(!$('tapPanel').hidden){closeTaps();return}
   if(!$('talkPanel').hidden){closeTalk();return}
   if(menuOpen())closeMenu();
@@ -2009,7 +2050,7 @@ function updateQuest(){
   const q=$('quest');const v=C.quest?C.quest():null;
   q.hidden=!v;q.textContent=v?v.text:'';q.classList.toggle('late',!!(v&&v.late));
 }
-function updateSound(){$('sndBtn').setAttribute('aria-pressed',soundOn?'true':'false');$('sndBtn').textContent=soundOn?'♪':'♪̸'}
+function updateSound(){$('sndBtn').setAttribute('aria-pressed',soundOn?'true':'false');}
 function openPanel(){
   $('blist').innerHTML=C.words.map(([w,m])=>{const got=has(w),pf=state.perfect.includes(w);return `<div class="bd ${pf?'perfect':got?'got':''}"><span class="s">${pf?'★':got?'✓':'☆'}</span><span class="w">${w}</span><span class="m">${m}</span></div>`}).join('');
   $('tips').innerHTML=(C.tips||[]).map(t=>`<li>${t}</li>`).join('');
@@ -2036,7 +2077,7 @@ function boot(id){
   NPCS=C.npcs;NPCS.forEach(n=>{n.home=n.home||n.dir;n.turnAt=performance.now()+2000+Math.random()*3000});
   loadState();loadTalk();
   Object.assign(player,{x:state.x,y:state.y,dir:state.dir,moving:false,t:0});petReset();pet.on=false;
-  $('cartBtn').innerHTML=`<span class="cl">${C.n}</span>`;$('cartBtn').style.setProperty('--cart',C.color);$('help').innerHTML=C.help||'';
+  $('cartBtn').innerHTML=`<span class="cl">${C.n}</span>`;$('cartBtn').style.setProperty('--cart',C.color);$('srcBtn').hidden=!C.sources;$('help').innerHTML=C.help||'';
   try{localStorage.setItem('daneo-maul-cart',C.id)}catch(e){}
   updateHud();updateQuest();
   if(!state.seenIntro&&C.intro){state.seenIntro=true;save();openDialog('안내',says(C.intro))}
@@ -2076,7 +2117,9 @@ document.querySelectorAll('.dpad button').forEach(b=>{
 $('btnA').addEventListener('pointerdown',e=>{e.preventDefault();interact()});
 $('btnB').addEventListener('pointerdown',e=>{e.preventDefault();cancel()});
 $('dlg').addEventListener('click',e=>{const w=e.target.closest('.txt .w');if(w){e.stopPropagation();showWord(w.textContent);return}advance()});
-$('gloss').addEventListener('click',e=>{if(!e.target.closest('.q'))hideGloss()});
+$('gloss').addEventListener('click',e=>{ // tap the definition to keep it (× closes); B closes too
+  if(e.target.closest('.gx')){hideGloss();return}if(e.target.closest('.q'))return;
+  clearTimeout(showWord.t);$('gloss').classList.add('pinned')});
 $('enToggle').addEventListener('click',()=>$('panel').classList.toggle('en'));
 $('choices').addEventListener('pointerdown',e=>{const b=e.target.closest('.choice');if(b){sel=choiceBtns().indexOf(b);markSel()}});
 $('talkBtn').addEventListener('click',openTalk);
@@ -2085,7 +2128,17 @@ $('tapSortT').addEventListener('click',()=>{tapSort='t';openTaps()});$('tapSortN
 $('tapPanel').addEventListener('click',e=>{if(e.target.id==='tapPanel'){closeTaps();return}const p=e.target.closest('.tp');if(p){const en=p.querySelector('.tpe');en.hidden=!en.hidden}});$('talkClose').addEventListener('click',closeTalk);
 $('talkPanel').addEventListener('click',e=>{if(e.target.id==='talkPanel'){closeTalk();return}const w=e.target.closest('.w');if(w)showWord(w.textContent)});
 $('badgeBtn').addEventListener('click',openPanel);
-$('cartBtn').addEventListener('click',openMenu);
+$('cartMi').addEventListener('click',openMenu);
+/* START: everything that isn't the game itself */
+function toggleStart(){const P=$('startPanel');if(P.hidden&&panelOpen())return;P.hidden=!P.hidden;hideGloss()}
+$('startBtn').addEventListener('click',toggleStart);$('startClose').addEventListener('click',()=>$('startPanel').hidden=true);
+$('startPanel').addEventListener('click',e=>{if(e.target.id==='startPanel'){$('startPanel').hidden=true;return}
+  const mi=e.target.closest('.mi');if(mi&&!mi.classList.contains('toggle'))$('startPanel').hidden=true},true);  // capture: close the menu before the item opens its panel
+/* 뉴스 출처: the real news a cartridge is based on (C.sources = [[Korean headline, url, site], …]) */
+function openSources(){const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  $('srcList').innerHTML=(C.sources||[]).map(([t,u,site])=>`<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t)}</a><small>${esc(site)}</small></li>`).join('');$('srcPanel').hidden=false}
+$('srcBtn').addEventListener('click',openSources);$('srcClose').addEventListener('click',()=>$('srcPanel').hidden=true);
+$('srcPanel').addEventListener('click',e=>{if(e.target.id==='srcPanel')$('srcPanel').hidden=true});
 $('cartClose').addEventListener('click',closeMenu);
 $('cartPanel').addEventListener('click',e=>{if(e.target.id==='cartPanel')closeMenu()});
 $('sndBtn').addEventListener('click',()=>{soundOn=!soundOn;try{localStorage.setItem('daneo-maul-sound',soundOn?'1':'0')}catch(e){}updateSound();sfx('ok')});
