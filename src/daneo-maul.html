@@ -99,6 +99,7 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
 .startrow{display:flex;justify-content:center;padding-top:8px}
 .start{font-family:var(--display);font-size:.8rem;letter-spacing:.12em;background:var(--shell-2);color:var(--muted);border:2px solid var(--edge);border-radius:999px;padding:6px 18px;cursor:pointer;transform:rotate(-18deg)}
 .start:active{transform:rotate(-18deg) translateY(2px)}
+.games{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}.games span{font-size:.8rem;opacity:.7;width:100%}.games a{font-weight:700;font-size:.92rem;color:inherit;border:2px dashed currentColor;border-radius:8px;padding:5px 10px;text-decoration:none;opacity:.85}
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mi{font-family:var(--display);font-size:1.1rem;padding:14px 10px;border-radius:10px;border:2px solid var(--box-edge);background:#fff;color:var(--box-ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
 .mi.wide{grid-column:1/-1}.mi[hidden]{display:none}
@@ -206,6 +207,7 @@ body.talkopen .gloss{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px
       <button class="mi toggle" id="sndBtn" aria-pressed="true">소리</button>
       <button class="mi" id="srcBtn" hidden>뉴스 출처</button>
     </div>
+    <div class="games"><span>다른 게임</span><a href="https://stan-stani.github.io/seongsilho/" target="_blank" rel="noopener">성실호</a><a href="https://stan-stani.github.io/hyeongje/" target="_blank" rel="noopener">형제</a><a href="https://stan-stani.github.io/dogam-yeohaeng/" target="_blank" rel="noopener">도감 여행</a><a href="https://stan-stani.github.io/banghu/" target="_blank" rel="noopener">방과 후</a></div>
   </div>
 </div>
 <div class="panel" id="srcPanel" hidden>
