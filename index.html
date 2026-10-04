@@ -1924,13 +1924,18 @@ function renderChoices(s){
   const box=$('choices');box.hidden=false;
   const order=s.opts.map((_,i)=>i);
   for(let i=order.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[order[i],order[j]]=[order[j],order[i]]}
-  box.innerHTML=order.map(i=>`<button class="choice" data-i="${i}">${s.opts[i][0]}</button>`).join('');
-  box.querySelectorAll('.choice').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();choose(s,+b.dataset.i)}));
-  sel=0;markSel();
+  box.innerHTML=order.map(i=>`<button class="choice" data-i="${i}">${String(s.opts[i][0]).replace(/[가-힣]+/g,w=>`<span class="cw">${w}</span>`)}</button>`).join('');
+  let pressT=null,defined=false;  // long-press a word on a choice = its definition (doesn't answer)
+  box.querySelectorAll('.choice').forEach(b=>{
+    b.addEventListener('pointerdown',e=>{const w=e.target.closest('.cw');defined=false;clearTimeout(pressT);if(w)pressT=setTimeout(()=>{defined=true;showWord(w.textContent)},450)});
+    for(const t of ['pointerup','pointerleave','pointercancel'])b.addEventListener(t,()=>clearTimeout(pressT));
+    b.addEventListener('click',e=>{e.stopPropagation();if(defined){defined=false;return}choose(s,+b.dataset.i)})});
+  sel=-1;choicesAt=performance.now();markSel();  // nothing selected: A can't answer by accident
 }
 function markSel(){const bs=choiceBtns();bs.forEach((b,i)=>b.classList.toggle('sel',i===sel));bs[sel]?.focus({preventScroll:true});bs[sel]?.scrollIntoView({block:'nearest'})}
-function moveSel(d){const n=choiceBtns().length;if(!n)return;sel=(sel+d+n)%n;markSel();sfx('move')}
-function confirmSel(){const b=choiceBtns()[sel];if(b)b.click()}
+function moveSel(d){const n=choiceBtns().length;if(!n)return;sel=sel<0?(d>0?0:n-1):(sel+d+n)%n;markSel();sfx('move')}
+let choicesAt=0;
+function confirmSel(){if(sel<0||performance.now()-choicesAt<350)return;const b=choiceBtns()[sel];if(b)b.click()}
 function choose(s,i){
   const o=s.opts[i];
   if(o[1]){
@@ -1987,6 +1992,7 @@ function review(n){
   return [...says(n.after),{...q,review:true}];
 }
 function interact(){
+  if(!$('gloss').hidden){hideGloss();return}  // A closes the definition first, without advancing
   if(menuOpen()){pickCart(menuSel);return}
   if(!$('panel').hidden)return;
   if(choosing()){confirmSel();return}
