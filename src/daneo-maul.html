@@ -1929,9 +1929,9 @@ function renderChoices(s){
   sel=-1;choicesAt=performance.now();markSel();  // nothing selected: A can't answer by accident
 }
 function markSel(){const bs=choiceBtns();bs.forEach((b,i)=>b.classList.toggle('sel',i===sel));bs[sel]?.focus({preventScroll:true});bs[sel]?.scrollIntoView({block:'nearest'})}
-function moveSel(d){const n=choiceBtns().length;if(!n)return;sel=sel<0?(d>0?0:n-1):(sel+d+n)%n;markSel();sfx('move')}
+function moveSel(d){if(performance.now()-choicesAt<450)return;const n=choiceBtns().length;if(!n)return;sel=sel<0?(d>0?0:n-1):(sel+d+n)%n;markSel();sfx('move')}
 let choicesAt=0;
-function confirmSel(){if(sel<0||performance.now()-choicesAt<350)return;const b=choiceBtns()[sel];if(b)b.click()}
+function confirmSel(){if(sel<0||performance.now()-choicesAt<450)return;const b=choiceBtns()[sel];if(b)b.click()}
 function choose(s,i){
   const o=s.opts[i];
   if(o[1]){
