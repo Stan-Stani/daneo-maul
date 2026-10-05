@@ -207,8 +207,9 @@ body.talkopen .gloss{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px
       <button class="mi toggle" id="sndBtn" aria-pressed="true">소리</button>
       <button class="mi" id="srcBtn" hidden>뉴스 출처</button>
       <button class="mi wide" id="linkBtn">이 편 링크 복사</button>
+      <button class="mi wide" id="repBtn">문제 알리기</button>
     </div>
-    <div class="games"><span>다른 게임</span><a href="https://stan-stani.github.io/seongsilho/" target="_blank" rel="noopener">성실호</a><a href="https://stan-stani.github.io/hyeongje/" target="_blank" rel="noopener">형제</a><a href="https://stan-stani.github.io/dogam-yeohaeng/" target="_blank" rel="noopener">도감 여행</a><a href="https://stan-stani.github.io/banghu/" target="_blank" rel="noopener">방과 후</a></div>
+    <div class="games"><span>다른 게임</span><a href="https://stan-stani.github.io/seongsilho/" target="_blank" rel="noopener">성실호</a><a href="https://stan-stani.github.io/hyeongje/" target="_blank" rel="noopener">형제</a><a href="https://stan-stani.github.io/banghu/" target="_blank" rel="noopener">방과 후</a></div>
   </div>
 </div>
 <div class="panel" id="srcPanel" hidden>
@@ -1798,7 +1799,7 @@ const npcAt=(x,y)=>NPCS.find(n=>n.x===x&&n.y===y);
 const walkable=(x,y)=>!!(C.legend[at(x,y)]||{}).walk;
 const blocked=(x,y)=>!walkable(x,y)||!!npcAt(x,y);
 const menuOpen=()=>!$('cartPanel').hidden;
-const panelOpen=()=>!$('startPanel').hidden||!$('srcPanel').hidden||!$('panel').hidden||menuOpen()||!$('talkPanel').hidden||!$('tapPanel').hidden;
+const panelOpen=()=>!$('startPanel').hidden||!$('srcPanel').hidden||!$('panel').hidden||menuOpen()||!$('talkPanel').hidden||!$('tapPanel').hidden||(!!$('repPanel')&&!$('repPanel').hidden);
 
 function tryMove(){
   if(player.moving||!held||dlg||panelOpen())return;
@@ -1847,6 +1848,7 @@ function show(s){
   if(s.award)award(s.award);
   $('who').textContent=s.who||dlg.name;$('choices').hidden=true;$('choices').innerHTML='';$('more').hidden=true;
   logTalk(s.who||dlg.name,s.say||s.ask);
+  lastLines.push(((s.who||dlg.name||'')+': '+String(s.say||s.ask||'').replace(/<[^>]*>/g,'')).slice(0,300));if(lastLines.length>3)lastLines.shift();
   typeText(s.say||s.ask,()=>{if(s.ask)renderChoices(s);else $('more').hidden=false});
 }
 /* ---------- tap a word: Korean definition, English only behind ? (dictionary in window.LEX, built by build.py) ---------- */
@@ -1914,7 +1916,7 @@ function copyTaps(before){
 function showWord(w){
   if(firstTime('tapWord'))document.querySelectorAll('.taptip').forEach(x=>x.remove()),document.querySelectorAll('.w.hint').forEach(x=>x.classList.remove('hint'));
   const rows=lexLookup(w);if(!rows.length){hideGloss();toast('사전에 없는 말이에요.');return}
-  noteTap(rows);
+  noteTap(rows);lastWord=(w+' → '+rows.map(([h,d])=>h+': '+d.k).join(' / ')).slice(0,400);
   const el=$('gloss');
   el.innerHTML=rows.map(([h,d])=>`<div><b>${h}</b>${d.k}<span class="en" hidden>${d.e||''}</span></div>`).join('')+'<button class="q" type="button" aria-label="영어로 보기">?</button><button class="gx" type="button" aria-label="닫기">×</button>';
   el.classList.remove('pinned');el.hidden=false;
@@ -1988,6 +1990,7 @@ function closeDialog(){
 function cancel(){
   if(!$('gloss').hidden){hideGloss();return}
   if(!$('startPanel').hidden){$('startPanel').hidden=true;return}
+  if($('repPanel')&&!$('repPanel').hidden){closeReport();return}
   if(!$('srcPanel').hidden){$('srcPanel').hidden=true;return}
   if(!$('tapPanel').hidden){closeTaps();return}
   if(!$('talkPanel').hidden){closeTalk();return}
@@ -2152,7 +2155,40 @@ $('talkPanel').addEventListener('click',e=>{if(e.target.id==='talkPanel'){closeT
 $('badgeBtn').addEventListener('click',openPanel);
 $('cartMi').addEventListener('click',openMenu);
 /* START: everything that isn't the game itself */
+/* 문제 알리기: a report goes to the word-reports inbox on seldoncortex.com (same inbox as 성실호, 형제, 방과 후).
+   Artifacts can't call other sites, so 보내기 is a plain link carrying the report after the #; the page there posts it once. */
+const REPORT_URL='https://seldoncortex.com/word-reports/';let lastLines=[],repKind='game',lastWord='';
+function reportCtx(){
+  const q=C.quest?C.quest():null;
+  return {chapter:C.title||C.id,place:C.id,pos:player.x+','+player.y,objective:q?q.text:'',
+    line:dlg&&dlg.cur?lastLines[lastLines.length-1]:'',lines:lastLines.join('\n'),word:lastWord}
+}
+function reportHref(){
+  const r={game:'daneo-maul',kind:repKind,note:$('repNote').value.trim().slice(0,1000),build:String(C.id),ctx:reportCtx()};
+  const b=new TextEncoder().encode(JSON.stringify(r));let bin='';b.forEach(x=>bin+=String.fromCharCode(x));
+  return REPORT_URL+'#'+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function openReport(){
+  if(!$('repPanel')){
+    const P=document.createElement('div');P.className='panel';P.id='repPanel';P.hidden=true;
+    P.innerHTML=`<div class="sheet talksheet" role="dialog" aria-label="문제 알리기"><h2><span>문제 알리기</span><button class="btn" id="repClose">닫기</button></h2>
+     <div class="tapsort"><button class="btn" id="repGame">게임이 이상해요</button><button class="btn" id="repKo">한국어가 이상해요</button></div>
+     <div id="repCtx" style="font-size:.85rem;opacity:.75;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0"></div>
+     <textarea id="repNote" rows="3" maxlength="1000" placeholder="무엇이 이상해요?" style="width:100%;box-sizing:border-box;font:inherit;padding:8px;border-radius:8px"></textarea>
+     <div style="display:flex;justify-content:flex-end;margin-top:8px"><a class="btn" id="repSend" target="_blank" rel="noopener" style="text-decoration:none">보내기</a></div></div>`;
+    document.body.append(P);
+    P.addEventListener('click',e=>{if(e.target===P)closeReport()});$('repClose').addEventListener('click',closeReport);
+    $('repGame').addEventListener('click',()=>setRepKind('game'));$('repKo').addEventListener('click',()=>setRepKind('korean'));
+    $('repNote').addEventListener('input',()=>{$('repSend').href=reportHref()});
+    $('repSend').addEventListener('click',()=>{$('repSend').href=reportHref();setTimeout(()=>{closeReport();$('repNote').value='';toast('고마워요!')},300)});
+  }
+  const c=reportCtx();$('repCtx').textContent=[c.chapter,c.line||lastLines[lastLines.length-1]||'',c.word?'단어: '+c.word:''].filter(Boolean).join('\n');
+  setRepKind(repKind);$('repPanel').hidden=false;document.body.classList.add('talkopen');hideGloss();
+}
+function setRepKind(k){repKind=k;$('repGame').classList.toggle('on',k==='game');$('repKo').classList.toggle('on',k==='korean');$('repSend').href=reportHref()}
+function closeReport(){$('repPanel').hidden=true;document.body.classList.remove('talkopen')}
 function toggleStart(){const P=$('startPanel');if(P.hidden&&panelOpen())return;P.hidden=!P.hidden;hideGloss()}
+$('repBtn').addEventListener('click',()=>{$('startPanel').hidden=true;openReport()});
 $('startBtn').addEventListener('click',toggleStart);$('startClose').addEventListener('click',()=>$('startPanel').hidden=true);
 $('startPanel').addEventListener('click',e=>{if(e.target.id==='startPanel'){$('startPanel').hidden=true;return}
   const mi=e.target.closest('.mi');if(mi&&!mi.classList.contains('toggle'))$('startPanel').hidden=true},true);  // capture: close the menu before the item opens its panel
@@ -2181,6 +2217,7 @@ document.addEventListener('contextmenu',e=>e.preventDefault());
 document.querySelector('.pad').addEventListener('touchstart',e=>{if(e.cancelable)e.preventDefault()},{passive:false});
 const KEYS={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right'};
 addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('textarea,input'))return;  // typing a note, not playing
   if(KEYS[e.key]){e.preventDefault();if(dir(KEYS[e.key]))return;held=KEYS[e.key];return}
   if(choosing()&&/^[1-4]$/.test(e.key)){const b=choiceBtns()[+e.key-1];if(b){e.preventDefault();b.click()}return}
   if([' ','Enter','z','Z'].includes(e.key)){e.preventDefault();if(!e.repeat)interact();return}

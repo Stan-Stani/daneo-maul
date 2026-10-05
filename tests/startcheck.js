@@ -10,10 +10,13 @@ window.__play=async function(){
   check(document.querySelectorAll('header button').length===1,'header has only the badge button');await shot('header');
   $('startBtn').click();await wait(150);check(!$('startPanel').hidden,'START opens the menu');
   const items=[...$('startPanel').querySelectorAll('.mi')].filter(b=>!b.hidden).map(b=>b.textContent.trim());
-  check(items.length===5,'1편 menu: '+items.join(' | '));check($('srcBtn').hidden,'no 뉴스 출처 in 1편');await shot('menu');
+  check(items.length===6&&items.includes('문제 알리기'),'1편 menu: '+items.join(' | '));check($('srcBtn').hidden,'no 뉴스 출처 in 1편');await shot('menu');
   cancel();check($('startPanel').hidden,'B closes the menu');
   $('startBtn').click();await wait(80);$('tapBtn').click();await wait(150);check($('startPanel').hidden&&!$('tapPanel').hidden,'사전 closes the menu and opens 찾아본 말');cancel();
   $('startBtn').click();await wait(80);$('cartMi').click();await wait(150);check(!$('cartPanel').hidden,'카트리지 바꾸기 opens the cartridge menu');cancel();
+  $('startBtn').click();await wait(80);$('repBtn').click();await wait(150);check(!$('repPanel').hidden,'문제 알리기 opens the report sheet');$('repKo').click();$('repNote').value='테스트';$('repNote').dispatchEvent(new Event('input'));
+  {const h=$('repSend').getAttribute('href');const b=atob(h.split('#')[1].replace(/-/g,'+').replace(/_/g,'/'));const r=JSON.parse(new TextDecoder().decode(Uint8Array.from(b,c=>c.charCodeAt(0))));LOG.push('REPORT '+JSON.stringify(r));check(h.startsWith('https://seldoncortex.com/word-reports/#')&&r.game==='daneo-maul'&&r.kind==='korean'&&r.note==='테스트','보내기 link carries the report')}
+  $('repNote').dispatchEvent(new KeyboardEvent('keydown',{key:'x',bubbles:true}));check(!$('repPanel').hidden,'typing x in the note does not close it');cancel();check($('repPanel').hidden,'B closes the report sheet');
   $('startBtn').click();await wait(80);const was=soundOn;$('sndBtn').click();await wait(60);check(soundOn!==was&&!$('startPanel').hidden,'소리 toggles and the menu stays open');$('sndBtn').click();cancel();
   history.replaceState(null,'','?편=3');check(linkedCart()==='c3','?편=3 picks 3편');history.replaceState(null,'',location.pathname+'#5편');check(linkedCart()==='c5','#5편 picks 5편');
   history.replaceState(null,'','?cart=c9');check(linkedCart()===null,'an unknown cartridge is ignored');history.replaceState(null,'',location.pathname);
