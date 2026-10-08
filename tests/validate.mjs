@@ -58,7 +58,7 @@ for(const CH of ctx.CHAPTERS){
  if(typeof C.questText()!=='string')E('questText must return a string');
 }
 // the engine is generated from the shared walk-engine: the copy here must match it
-{const shared=new URL('../../walk-engine-daneo/engine.js',import.meta.url);if(fs.existsSync(shared)){const mine=fs.readFileSync(new URL('../src/engine.js',import.meta.url),'utf8').replace(/^\/\*[^\n]*\*\/\n/,'');
+{const shared=new URL('../../walk-engine/engine.js',import.meta.url);if(fs.existsSync(shared)){const mine=fs.readFileSync(new URL('../src/engine.js',import.meta.url),'utf8').replace(/^\/\*[^\n]*\*\/\n/,'');
  if(mine!==fs.readFileSync(shared,'utf8')){errs.push('src/engine.js differs from walk-engine/engine.js — edit walk-engine and run its sync.sh')}}}
 // the page's stylesheet: one <style> block, and nothing CSS-like after it in the head (a stray </style> once printed CSS as page text)
 {const sh=fs.readFileSync('src/shell.html','utf8'),o=(sh.match(/<style/g)||[]).length,c=(sh.match(/<\/style>/g)||[]).length;
