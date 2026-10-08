@@ -114,7 +114,8 @@ const NPC={
     DESK[0],DESK[1],DESK[2],
     {say:'감사합니다! 이제 기사님한테 머신을 보여 주세요.',award:['작성하다'],set:go(2)}];
   }},
- fixer:{name:'수리 기사',zone:'village',x:21,y:4,dir:'left',look:P({hair:'#5A3A22',skin:'#D9A47A',shirt:'#4F7BD6',pants:'#3A3A48',cap:'#E9A23B'}),badge:['고장 나다','수리하다','대체하다'],
+ fixer:{name:'수리 기사',zone:'village',x:20,y:4,dir:'left',  // beside the workbench: at 21,4 the two of them sealed the shop's back (the bench was unreachable)
+ look:P({hair:'#5A3A22',skin:'#D9A47A',shirt:'#4F7BD6',pants:'#3A3A48',cap:'#E9A23B'}),badge:['고장 나다','수리하다','대체하다'],
   after:'고장 나면 또 오세요. 다 수리해 줄게요! 🔧',
   status:()=>state.stage<2?'wait':undefined,
   talk:()=>[],

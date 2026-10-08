@@ -22,6 +22,8 @@
  {inspect:['village',16,5]},
  {check:()=>__log.some(l=>l.includes('수리점 카운터예요. 신청서가 있어요.')),msg:'the shop counter: the repair form'},
  {talk:'fixer',shotBefore:'06-repair'},
+ {inspect:['village',21,3],shot:'06b-workbench'},  // the workbench, reachable since 수리 기사 stands at 20,4
+ {check:()=>{const s=(talk[talk.length-1]||[])[1]||'';return state.stage>=3?/대체했어요/.test(s):/망치/.test(s)},msg:'the workbench line fits the story (old part replaced after the repair)'},
  {check:()=>state.stage===3&&['고장 나다','수리하다','대체하다'].every(has),msg:'repaired: 고장 나다 수리하다 대체하다 (stage 3)'},
  {check:()=>C.questText().includes('관장한테 다시 가요')&&status(C.NPC.leader)==='todo',msg:'목표: back to the leader, who shows ! again'},
  {inspect:['village',17,16]},
