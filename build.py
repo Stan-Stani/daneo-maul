@@ -5,7 +5,10 @@ adapter + the cartridges (src/cartridges, as written for the old engine) + game 
 import pathlib,re,sys,json
 root=pathlib.Path(__file__).parent
 shell=(root/'src/shell.html').read_text(encoding='utf-8')
-chs=sorted((root/'src/cartridges').glob('c*.js'),key=lambda p:int(re.search(r'\d+',p.stem).group()))  # the old cartridges, verbatim
+num=lambda p:int(re.search(r'\d+',p.stem).group())
+native={p.stem:p for p in (root/'src/chapters').glob('c*.js')}  # chapters written for the walk engine
+old={p.stem:p for p in (root/'src/cartridges').glob('c*.js')}  # cartridges not converted yet (run through src/adapter.js)
+chs=sorted([native.get(k) or old[k] for k in set(native)|set(old)],key=num)
 if '--chapters' in sys.argv: # publish only finished chapters: --chapters c1,c3
     keep=sys.argv[sys.argv.index('--chapters')+1].split(',');chs=[p for p in chs if p.stem in keep]
 lexmap=json.loads((root/'src/lexicon-map.json').read_text(encoding='utf-8')) if (root/'src/lexicon-map.json').exists() else {}
@@ -17,7 +20,9 @@ lex={'map':{k:v for k,v in lexmap.items() if any(l in alldefs and alldefs[l] for
 parts=['<script>\n/* Tap-a-word dictionary: word as written → dictionary forms, and learner definitions (lexicon/). */\nwindow.LEX='+json.dumps(lex,ensure_ascii=False,separators=(',',':'))+';\n</script>',
  '<script>\n/* Chapters register themselves here; each keeps its own save. */\nconst CHAPTERS=[];\n</script>']
 parts.append(f'<script>\n{(root/"src/village.js").read_text(encoding="utf-8")}</script>')  # 단어 마을's own tiles, people and markers
-parts.append(f'<script>\n{(root/"src/adapter.js").read_text(encoding="utf-8")}</script>')  # CARTRIDGES.push → a walk-engine chapter
+parts.append(f'<script>\n{(root/"src/kit.js").read_text(encoding="utf-8")}</script>')  # 단어 마을's chapter kit
+if any(p.parent.name=='cartridges' for p in chs):
+    parts.append(f'<script>\n{(root/"src/adapter.js").read_text(encoding="utf-8")}</script>')  # CARTRIDGES.push → a walk-engine chapter
 parts+=[f'<script>\n{p.read_text(encoding="utf-8")}</script>' for p in chs]
 parts.append(f'<script>\n{(root/"src/game.js").read_text(encoding="utf-8")}</script>')  # this game's settings for the shared engine
 parts.append(f'<script>\n{(root/"src/engine.js").read_text(encoding="utf-8")}</script>')
