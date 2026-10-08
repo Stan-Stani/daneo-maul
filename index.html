@@ -305,6 +305,10 @@ body.talkopen .gloss{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px
     <div class="card" id="card"></div>
     <h3>가방</h3>
     <ul class="items" id="items"></ul>
+    <h3 id="tipsH">팁</h3>
+    <ul class="tips" id="tips"></ul>
+    <h3 id="srcH" hidden>뉴스 출처</h3>
+    <ul class="srclist" id="srcList"></ul>
     <div class="row">
       <button class="btn warn" id="resetBtn">처음부터</button>
       <button class="btn primary" id="closePanel">닫기</button>
@@ -508,109 +512,103 @@ return {TILES,drawChar,drawDog,marker,sayAt,TREES};
 })();
 </script>
 <script>
-/* 1편 · 경기장과 도장 — 단어 마을's first cartridge on the shared walk engine (trial port). Every line, the map and the people are as in
-   src/daneo-maul.html; the art is 단어 마을's own (src/village.js). What changes is the engine's: review levels instead of the one-shot ★. */
-CHAPTERS.push({id:'c1',n:'1편',title:'경기장과 도장',place:'눕다 · 떨어지다 · 놓다 · 넣다 · 시합 · 승부 · 규칙 · 심판 · 관중',words:9,save:'daneo-maul-v1',color:'#B5654A',
- start:{zone:'village',x:8,y:9,dir:'down'},introWho:'안내',
- /* a save from the old engine (badges + perfect): a ★ badge (no miss) becomes memory level 3, the engine's ★; a badge without ★ is
-    level 0 and due now, so its ? shows up. A finished cartridge stays finished. Runs once (f.ported). */
- migrate:st=>{const F=st.f||(st.f={});if(F.ported)return;F.ported=1;st.lv=st.lv||{};
-  const b=st.badges||[],pf=st.perfect||[];
-  b.forEach(w=>{if(!st.lv[w])st.lv[w]=pf.includes(w)?{b:3,due:now()+GAP[3]}:{b:0,due:now()}});
-  if(st.celebrated||b.length>=9){F.allWords=1;F.done=1}},
- make:()=>{
-const V=VILLAGE,P=look=>({...look,draw:V.drawChar});
-const WORDS=['눕다','떨어지다','놓다','넣다','시합','승부','규칙','심판','관중'];
-const DICT={
- '눕다':{k:'몸을 바닥에 길게 대요.',e:'to lie down',ex:'아홉 시에 침대에 누울 거예요.'},
- '떨어지다':{k:'위에서 아래로 내려가요.',e:'to fall',ex:'병이 탁자에서 떨어졌어요.'},
- '놓다':{k:'어떤 곳에 두어요.',e:'to put on',ex:'핸드폰을 탁자에 놓았어요.'},
- '넣다':{k:'안으로 들어가게 해요.',e:'to put in',ex:'핸드폰을 주머니에 넣었어요.'},
- '시합':{k:'이기고 지는 경기.',e:'match',ex:'오늘은 가라테 시합이 있어요.'},
- '승부':{k:'누가 이기고 지는지 겨루는 것.',e:'bout',ex:'시합 하나에 승부가 세 개 있어요.'},
- '규칙':{k:'꼭 지켜야 하는 약속.',e:'rule',ex:'시합에서는 규칙을 지켜야 해요.'},
- '심판':{k:'이기고 지는 것을 정하는 사람.',e:'referee',ex:'누가 이겼는지 심판이 말해요.'},
- '관중':{k:'경기를 보는 사람들.',e:'spectators',ex:'경기장에 관중이 진짜 많아요.'},
-};
-/* listening review: the word against two that sound close (only with sound on) */
-const CONFUSE={'눕다':['놓다','굽다'],'떨어지다':['떨리다','떠나다'],'놓다':['넣다','낳다'],'넣다':['놓다','널다'],'시합':['시험','식당'],
- '승부':['승리','신부'],'규칙':['규모','구석'],'심판':['신발','심부름'],'관중':['관심','감정']};
-/* every question, by who asks it, so review can reuse them. gram:1 = it tests something else (에/동안, 이/을, 경기장, 이기다↔지다):
-   asked in the conversation as before, but review asks the word's own questions */
-const Q={
- minsu:[
-  {w:'눕다',ask:'그래서 오늘은 일찍 침대에 ___ 거예요.',opts:[['누울',1],['넣을',0,'음… 침대에 몸을 놓아요. 그건 "눕다"예요. 눕다 → 누울 거예요.'],['떨어질',0,'떨어지면 아파요! 침대에는 "눕다"예요.']]},
-  {w:'눕다',gram:1,ask:'몇 시에 누울까요? 추천해 주세요.',opts:[['아홉 시에 누우세요.',1],['아홉 시 동안 누우세요.',0,'"동안"은 얼마나 오래예요. 아홉 시간 동안! 너무 길어요. 시간은 "에"를 써요.']]}],
- jina:[
-  {w:'떨어지다',ask:'병이 탁자에서 ___.',opts:[['떨어졌어요',1],['놓았어요',0,'병이 위에서 아래로 갔어요. 그건 "떨어지다"예요.'],['누웠어요',0,'병은 눕지 않아요! 😄 위에서 아래로 → "떨어지다".']]},
-  {w:'떨어지다',gram:1,ask:'당신도 물건을 떨어뜨린 적 있어요?',opts:[['네, 핸드폰을 떨어뜨렸어요.',1],['네, 핸드폰이 떨어뜨렸어요.',0,'"떨어뜨리다"는 내가 해요. 그래서 "핸드폰을" 떨어뜨렸어요. (핸드폰이 떨어졌어요 도 돼요!)']]}],
- junho:[
-  {w:'놓다',ask:'핸드폰을 탁자에 ___.',opts:[['놓았어요',1],['넣었어요',0,'탁자는 위에 둬요. 위 → "놓다".']]},
-  {w:'넣다',ask:'핸드폰을 주머니에 ___.',opts:[['넣었어요',1],['놓았어요',0,'주머니는 안에 들어가요. 안 → "넣다".']]}],
- sabeom:[
-  {w:'시합',ask:'다른 사람이랑 규칙대로 겨루는 건 뭐예요?',opts:[['시합',1],['대련',0,'대련은 연습이에요. 진짜 겨루기는 "시합"이에요.'],['관중',0,'관중은 보는 사람이에요. 겨루기는 "시합"이에요.']]},
-  {w:'시합',gram:1,ask:'축구 ___장에 가 봤어요?',opts:[['경기',1],['시합',0,'"경기장"이라고 해요. "시합장"은 안 써요.']]}],
- ref:[
-  {w:'규칙',ask:'시합에서 지켜야 하는 건 뭐예요?',opts:[['규칙',1],['승부',0,'이건 되고, 이건 안 돼요. 그게 "규칙"이에요.'],['관중',0,'관중은 지키는 게 아니에요! 😄 "규칙"을 지켜요.']]},
-  {w:'심판',ask:'누가 이겼는지 누가 말해요?',opts:[['심판',1],['관중',0,'관중은 그냥 봐요. 결정은 심판이 해요.']]}],
- sua:[
-  {w:'관중',ask:'관중은 누가 이겼는지 결정할 수 있어요?',opts:[['아니요, 그냥 봐요.',1],['네, 결정해요.',0,'결정은 심판이 해요. 관중은 보고 소리 질러요.']]},
-  {w:'관중',ask:'콘서트에도 ___이 있어요. 노래를 들어요.',opts:[['관중',1],['심판',0,'콘서트에 심판은 없어요! 듣는 사람들은 "관중"이에요.']]}],
- taeo:[
-  {w:'승부',gram:1,ask:'첫 번째 승부! "이기다"의 반대는?',opts:[['지다',1],['눕다',0,'눕다는 침대에서 해요! 이기다 ↔ "지다".'],['놓다',0,'놓다는 물건을 둬요. 이기다 ↔ "지다".']]},
-  {w:'승부',gram:1,ask:'두 번째 승부! 시합 하나___ 승부가 여러 개 있어요.',opts:[['에',1],['의',0,'안에 있는 것은 "에"를 써요. 시합 하나에!']]},
-  {w:'승부',ask:'마지막 승부! 이기고 지는 결과를 뭐라고 해요?',opts:[['승부',1],['관중',0,'관중은 보는 사람이에요. 이기고 지는 건 "승부"예요.'],['규칙',0,'규칙은 지키는 거예요. 이기고 지는 건 "승부"예요.']]}],
- arm:[
-  {w:'시합',gram:1,ask:'팔씨름은 "시합"이 자연스러워요, "경기"가 자연스러워요?',opts:[['시합',1],['경기',0,'작은 겨루기는 "시합"이 자연스러워요. 팔씨름 시합!']]}],
-};
-/* the badge that completes the set ends the cartridge (the old engine's celebration, then the next-cartridge question) */
-const got=ws=>({award:ws,...(WORDS.every(w=>has(w)||ws.includes(w))?{finale:1,set:()=>{state.f.done=1}}:{})});
-const NPC={
- minsu:{name:'민수',zone:'village',x:5,y:4,dir:'left',look:P({hair:'#3B2A22',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#4A4F6A'}),badge:['눕다'],
-  after:'쿨쿨… (민수는 벌써 누웠어요.)',
-  talk:()=>[{say:'하아암… 피곤해요.'},{say:'저는 항상 피곤해요. 잠을 잘 못 자요.'},Q.minsu[0],Q.minsu[1],
-   {say:'좋아요! 아홉 시에 누울 거예요. 핸드폰도 안 볼게요.',...got(['눕다'])}]},
- jina:{name:'지나',zone:'village',x:7,y:5,dir:'up',look:P({hair:'#7A3E22',skin:'#F3D0B0',shirt:'#E07A5F',pants:'#3D5A80',long:1}),badge:['떨어지다'],
-  after:'이제 병을 탁자 가운데에 놓았어요. 안 떨어져요!',
-  talk:()=>[{say:'앗! 방금 "쨍그랑" 소리 들었어요?'},Q.jina[0],{say:'다행히 안 깨졌어요.'},Q.jina[1],
-   {say:'아이고! 저도 자주 떨어뜨려요.',...got(['떨어지다'])}]},
- junho:{name:'준호',zone:'village',x:11,y:10,dir:'down',look:P({hair:'#1E1E24',skin:'#E8B98F',shirt:'#3FA86B',pants:'#2E3548'}),badge:['놓다','넣다'],
-  after:'핸드폰은 주머니에 넣었어요. 이제 안전해요.',
-  talk:()=>[{say:'제 핸드폰 어디 있지…?'},{say:'아! 기억났어요. 아까 탁자 위에 뒀어요.'},Q.junho[0],{say:'찾았어요! 이제 안 잃어버릴 거예요.'},Q.junho[1],
-   {say:'위에는 놓다, 안에는 넣다! 고마워요.',...got(['놓다','넣다'])}]},
- sabeom:{name:'사범님',zone:'village',x:4,y:14,dir:'down',look:P({hair:'#9A9AA3',skin:'#E6B892',shirt:'#F4F4F4',pants:'#F4F4F4',belt:'#1C1C1C'}),badge:['시합'],
-  after:'대련은 연습, 시합은 진짜! 힘내요.',
-  talk:()=>[{say:'어서 와요! 여기는 가라테 도장이에요.'},{say:'친구랑 연습하는 건 "대련"이에요.'},Q.sabeom[0],Q.sabeom[1],
-   {say:'좋아요! 경기장에 가 보세요. 선수가 기다려요.',...got(['시합'])}]},
- ref:{name:'심판',zone:'village',x:20,y:4,dir:'left',look:P({hair:'#2B2B2B',skin:'#E3B48C',shirt:'stripe',pants:'#1F1F1F'}),badge:['규칙','심판'],
-  after:'반칙은 안 돼요! 규칙을 지키세요.',
-  talk:()=>[{say:'안녕하세요. 저는 심판이에요.'},{say:'저는 시합을 봐요. 그리고 결정해요.'},Q.ref[0],Q.ref[1],
-   {say:'정답! 이제 링 위의 선수랑 시합해 보세요.',...got(['규칙','심판'])}]},
- sua:{name:'관중 수아',zone:'village',x:17,y:2,dir:'down',look:P({hair:'#C0582E',skin:'#F3D0B0',shirt:'#F2C94C',pants:'#3D5A80',long:1}),badge:['관중'],
-  after:'힘내라! 힘내라!',
-  talk:()=>[{say:'와아아! 힘내라!'},{say:'저는 관중이에요. 앉아서 구경해요.'},Q.sua[0],Q.sua[1],
-   {say:'맞아요! 같이 응원해요~',...got(['관중'])}]},
- fan1:{name:'관중',zone:'village',x:15,y:2,dir:'down',look:P({hair:'#2F2F38',skin:'#DDAE85',shirt:'#5B8BD9',pants:'#333'}),
-  talk:()=>[{say:'우와! 관중이 진짜 많죠? 오늘 큰 시합이에요!'}]},
- fan2:{name:'관중',zone:'village',x:19,y:2,dir:'down',look:P({hair:'#E0C070',skin:'#F3D0B0',shirt:'#D9544B',pants:'#333'}),
-  talk:()=>[{say:'저는 매주 경기장에 와요. 앉아서 구경하는 게 좋아요.'}]},
- taeo:{name:'선수 태오',zone:'village',x:17,y:5,dir:'down',look:P({hair:'#1A1A1A',skin:'#D9A47A',shirt:'#F4F4F4',pants:'#F4F4F4',belt:'#1C1C1C'}),badge:['승부'],
-  after:'다음엔 제가 이길 거예요!',
-  /* gate: you need the referee's badge before the match */
-  script:()=>(!has('심판')&&!has('승부'))?[{say:'시합하고 싶어요? 먼저 심판님한테 규칙을 들으세요!'}]:null,
-  talk:()=>[{say:'좋아요! 저랑 시합해요!'},{say:'시합 하나에 승부가 세 개 있어요. 준비됐어요?'},...Q.taeo,
-   {say:'으악! 제가 졌어요. 세 승부 다 이겼어요!'},{who:'심판',say:'승부 끝! 도전자 승리!',...got(['승부'])}]},
- arm:{name:'팔씨름 아저씨',zone:'village',x:19,y:15,dir:'right',look:P({hair:'#5A3A22',skin:'#D9A47A',shirt:'#B5654A',pants:'#3A3A48'}),
-  talk:()=>[{say:'팔씨름 할래요? 팔꿈치를 탁자에 놓아요.'},Q.arm[0],{say:'맞아요! 으으으… 제가 이겼어요! 하하. 또 와요!'}]},
-};
-const sign=t=>({steps:[{who:'표지판',say:t}]});
-const ZONES={
- village:{name:'단어 마을',reg:'단어 마을',outdoor:true,
-  /* map legend: character → tile drawing; walk = can step on it */
-  legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
-   'H':{tile:'brick'},'G':{tile:'dojoWall'},'=':{tile:'wood',walk:1},'m':{tile:'mat',walk:1},'_':{tile:'sand',walk:1},
-   'R':{tile:'ring',walk:1},'S':{tile:'stands'},'~':{tile:'pond'},'b':{tile:'bed'},'t':{tile:'tableIn'},'a':{tile:'tableOut'},'p':{tile:'sign'}},
-  map:[
+/* 단어 마을's cartridges, exactly as written for the old engine (src/cartridges/cN.js, copied from src/daneo-maul.html by
+   tools/village.py), running on the shared walk engine: CARTRIDGES.push(cartridge) turns each one into a walk-engine chapter.
+   A cartridge keeps its own format (npcs, talk, pool, signs, spots, things, quest, onStep, follower, fresh, sources, tips); what
+   the old engine did around it (signs, the cartridge's celebration, the all-★ celebration, the late book) is done here. */
+
+/* Saves used to be stored under the misspelled 'danemaul-…' keys; copy them once to 'daneo-maul-…' (as the old engine did). */
+try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('danemaul-')){const nk='daneo-maul-'+k.slice(9);if(localStorage.getItem(nk)===null)localStorage.setItem(nk,localStorage.getItem(k))}}}catch(e){}
+
+const sayAt=VILLAGE.sayAt,TREES=VILLAGE.TREES;  // what cartridges use for their object lines
+var CARTRIDGES={push(old){CHAPTERS.push(fromCartridge(old))}};
+
+function fromCartridge(old){
+ const words=old.words.map(w=>w[0]);
+ return {id:old.id,n:old.n,title:old.title,color:old.color,save:old.save,words:words.length,place:words.join(' · '),
+  start:{zone:'village',...old.start},introWho:'안내',
+  /* every load: the cartridge's own state (stage, book, steps…) where the save has none. Once, for a save from the old engine:
+     a ★ badge (no miss) becomes memory level 3, the engine's ★; a ✓ badge is level 0 and due now (its ? shows up). */
+  migrate:st=>{const F=st.f||(st.f={});st.lv=st.lv||{};
+   const fr=old.fresh||{};for(const k in fr)if(st[k]===undefined)st[k]=JSON.parse(JSON.stringify(fr[k]));
+   if(F.ported)return;F.ported=1;
+   const b=st.badges||[],pf=st.perfect||[];
+   b.forEach(w=>{if(!st.lv[w])st.lv[w]=pf.includes(w)?{b:3,due:now()+GAP[3]}:{b:0,due:now()}});
+   if(st.celebrated){F.allWords=1;F.done=1}
+   if(st.celebratedPerfect)F.allStar=1},
+  make:()=>makeCartridge(old,words)};
+}
+
+function makeCartridge(old,words){
+ const eng=Object.fromEntries(old.words),lex=((typeof window!=='undefined'&&window.LEX)||{defs:{}}).defs;
+ const stem=w=>w.endsWith('다')&&w.length>1?w.slice(0,-1):w;
+ const right=q=>(q.opts||[]).filter(o=>o[1]).map(o=>o[0]);
+ /* the old engine: an NPC's questions test its badge words. The walk engine wants each question's word: the one it names, else the
+    only badge, else the badge its right answer or question contains */
+ const wOf=(q,n)=>q.w||(n.badge.length===1?n.badge[0]:n.badge.find(b=>[q.ask,...right(q)].some(t=>String(t).includes(stem(b))))||n.badge[0]);
+ const tag=(s,n)=>s&&s.ask&&n.badge?{...s,w:wOf(s,n)}:s;
+ const Q={},NPC={};
+ for(const n of old.npcs){
+  const talk=Array.isArray(n.talk)?n.talk.map(s=>tag(s,n)):null;
+  if(n.badge){const pool=(n.pool||talk||[]).filter(s=>s&&s.ask).map(s=>tag(s,n));if(pool.length)Q[n.id]=pool}
+  const o=Object.defineProperties({},Object.getOwnPropertyDescriptors(n));  // a fresh copy each boot, getters kept
+  o.zone='village';
+  o.talk=talk?()=>talk:typeof n.talk==='function'?()=>(n.talk()||[]).map(s=>tag(s,n)):()=>[];
+  o.look=!n.look?null:n.kind==='dog'?{...n.look,draw:VILLAGE.drawDog}:{...n.look,draw:VILLAGE.drawChar};
+  NPC[n.id]=o;
+ }
+ /* the 일지 card: the learner definition (lexicon) or the English, and an example from the cartridge itself */
+ const lines=old.npcs.flatMap(n=>[...(Array.isArray(n.talk)?n.talk:[]),...[].concat(n.after||[]).map(say=>({say}))]).filter(s=>s&&typeof s.say==='string');
+ const example=w=>{
+  for(const q of Object.values(Q).flat())if(q.w===w&&q.ask.includes('___')&&right(q)[0])return q.ask.replace('___',right(q)[0]);
+  const s=lines.find(s=>s.say.includes(stem(w)));if(s)return s.say;
+  const q=Object.values(Q).flat().find(q=>q.w===w);return q?`${q.ask} → ${right(q)[0]}`:'';  // a question and its answer
+ };
+ const DICT={};for(const w of words)DICT[w]={k:(lex[w]&&lex[w].k)||eng[w],e:eng[w],ex:example(w)};
+ const spots={};
+ for(const [k,[t,l]] of Object.entries(old.signs||{}))spots[k]={steps:[{who:t,say:l}]};
+ Object.assign(spots,old.spots||{});
+ const F=old.follower;
+ /* the old engine drew the dog one pixel lower than people, and sadder while it's hurt */
+ const FOLLOW=F?{name:F.name,when:F.when,talk:F.talk,look:{...F.look,draw:(L,X,Y,d,s)=>VILLAGE.drawDog(L,X,Y+1,d,s,!!(F.hurt&&F.hurt()))}}:null;
+ const quest=()=>(old.quest&&old.quest())||null;
+ return {WORDS:words,DICT,CONFUSE:{},Q,ITEMS:{},NPC,FOLLOW,TILES:VILLAGE.TILES,
+  ZONES:{village:{name:'단어 마을',reg:'단어 마을',outdoor:true,legend:old.legend,map:old.map,npcs:old.npcs.map(n=>n.id),spots,things:old.things||{}}},
+  INTRO:(old.intro||[]).map(say=>({say})),DONE:old.done||[],TIPS:old.tips||[],SOURCES:old.sources||null,
+  questText:()=>{const v=quest();return v?v.text:''},
+  questLate:()=>{const v=quest();return !!(v&&v.late)},
+  onStep:old.onStep||null,
+  /* after every conversation, as the old engine did: every badge in and no task left → the cartridge's celebration, then the next
+     cartridge; every word ★ (memory level 3) → the cartridge's perfect lines */
+  afterTalk(){
+   if(!state.f.done&&words.every(has)&&!quest()){state.f.done=1;state.f.allWords=1;save();finish();return}
+   if(old.perfect&&!state.f.allStar&&words.every(w=>lv(w).b>=3)){state.f.allStar=1;save();setTimeout(()=>{if(!dlg)openDialog('단어 마을',says(old.perfect))},500)}
+  }};
+}
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 1편 · 경기장과 도장
+   Content only — the engine draws, moves and runs dialogue.
+   Steps:  {say:'…'}  or  {ask:'… ___ …', opts:[[answer,1],[wrong,0,'why it is wrong'],…], w:'badge word'}
+           add award:['word'] to the step that hands out a badge; who:'name' to change the speaker.
+   ===================================================================== */
+CARTRIDGES.push({
+ id:'c1', n:'1편', title:'경기장과 도장', color:'#B5654A', save:'daneo-maul-v1',
+ words:[['눕다','to lie down'],['떨어지다','to fall'],['놓다','to put on'],['넣다','to put in'],['시합','match'],['승부','bout'],['규칙','rule'],['심판','referee'],['관중','spectators']],
+ start:{x:8,y:9,dir:'down'},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['아홉 시<b>에</b> 누울 거예요 ↔ 아홉 시간 <b>동안</b>','탁자<b>에</b> 놓다 · 주머니<b>에</b> 넣다','시합 하나<b>에</b> 승부가 여러 개 있어요','큰 스포츠는 <b>경기</b>, 작은 겨루기는 <b>시합</b>'],
+ intro:['단어 마을에 온 걸 환영해요!','마을 사람들한테 가서 A 버튼으로 말해요.','머리 위에 ! 가 있는 사람한테 배지가 있어요. 배지 아홉 개를 모아요!'],
+ done:['축하해요! 배지 아홉 개를 다 모았어요!','눕다, 떨어지다, 놓다, 넣다, 시합, 승부, 규칙, 심판, 관중. 완벽해요!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 아홉 개! 모든 단어가 완벽해요!','이제 아홉 시에 누우세요. 잘 자요~'],
+
+ /* map legend: character → tile drawing; walk = can step on it */
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'H':{tile:'brick'},'G':{tile:'dojoWall'},'=':{tile:'wood',walk:1},'m':{tile:'mat',walk:1},'_':{tile:'sand',walk:1},
+  'R':{tile:'ring',walk:1},'S':{tile:'stands'},'~':{tile:'pond'},'b':{tile:'bed'},'t':{tile:'tableIn'},'a':{tile:'tableOut'},'p':{tile:'sign'}},
+ map:[
 "TTTTTTTTTTTTTTTTTTTTTTTT",
 "T......................T",
 "T.HHHHHHHH...SSSSSSSSS.T",
@@ -630,34 +628,1838 @@ const ZONES={
 "T.GGG=GG.p.............T",
 "T........,.............T",
 "TTTTTTTTTTTTTTTTTTTTTTTT"],
-  npcs:['minsu','jina','junho','sabeom','ref','sua','fan1','fan2','taeo','arm'],
-  spots:{'12,8':sign('경기장 · 오늘은 가라테 시합!'),'8,10':sign('단어 마을 · 배지 아홉 개를 모아요!'),'9,16':sign('가라테 도장 · 사범님이 기다려요.'),
-   '4,4':'침대예요. 푹신해요. 여기에 눕고 싶어요…','7,4':'탁자예요. 병이 없어요. 아까 떨어졌나 봐요.','20,15':'팔씨름용 탁자예요. 팔꿈치를 여기에 놓아요.'},
-  /* a line for every tile of a kind, picked by the faced tile's position (the old sayAt picked the same way) */
-  things:{
-   T:V.TREES,
-   H:['빨간 벽돌집이에요. 안에서 쿨쿨 소리가 들려요. 😴','벽돌집 벽이에요. 아주 튼튼해요.','작은 창문이 있어요. 집 안이 조용해요.'],
-   S:['경기장 자리예요. 사람들이 앉아서 구경해요. 📣','경기장 벽이에요. 안에서 "와아!" 소리가 나요.','자리가 많아요. 오늘은 사람이 정말 많아요!'],
-   G:['가라테 도장 벽이에요. 안에서 "얍!" 소리가 나요. 🥋','도장 문은 아래쪽에 있어요.','창문에 하얀 도복이 걸려 있어요.'],
-   '~':['연못이에요. 오리 두 마리가 싸워요. 심판이 필요해요! 🦆🦆','물에 비친 내 얼굴… 시합 전이라서 긴장돼요. 😬','연못에 공이 떨어졌어요. 누가 넣었어요? ⚽'],
+
+ signs:{'12,8':['표지판','경기장 · 오늘은 가라테 시합!'],'8,10':['표지판','단어 마을 · 배지 아홉 개를 모아요!'],'9,16':['표지판','가라테 도장 · 사범님이 기다려요.']},
+ spots:{'4,4':'침대예요. 푹신해요. 여기에 눕고 싶어요…','7,4':'탁자예요. 병이 없어요. 아까 떨어졌나 봐요.','20,15':'팔씨름용 탁자예요. 팔꿈치를 여기에 놓아요.'},
+ things:{
+ T:sayAt(...TREES),
+ H:sayAt('빨간 벽돌집이에요. 안에서 쿨쿨 소리가 들려요. 😴','벽돌집 벽이에요. 아주 튼튼해요.','작은 창문이 있어요. 집 안이 조용해요.'),
+ S:sayAt('경기장 자리예요. 사람들이 앉아서 구경해요. 📣','경기장 벽이에요. 안에서 "와아!" 소리가 나요.','자리가 많아요. 오늘은 사람이 정말 많아요!'),
+ G:sayAt('가라테 도장 벽이에요. 안에서 "얍!" 소리가 나요. 🥋','도장 문은 아래쪽에 있어요.','창문에 하얀 도복이 걸려 있어요.'),
+ '~':sayAt('연못이에요. 오리 두 마리가 싸워요. 심판이 필요해요! 🦆🦆','물에 비친 내 얼굴… 시합 전이라서 긴장돼요. 😬','연못에 공이 떨어졌어요. 누가 넣었어요? ⚽'),
+ },
+
+ npcs:[
+ {id:'minsu',name:'민수',x:5,y:4,dir:'left',look:{hair:'#3B2A22',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#4A4F6A'},badge:['눕다'],
+  after:'쿨쿨… (민수는 벌써 누웠어요.)',
+  talk:[
+   {say:'하아암… 피곤해요.'},
+   {say:'저는 항상 피곤해요. 잠을 잘 못 자요.'},
+   {ask:'그래서 오늘은 일찍 침대에 ___ 거예요.',opts:[['누울',1],['넣을',0,'음… 침대에 몸을 놓아요. 그건 "눕다"예요. 눕다 → 누울 거예요.'],['떨어질',0,'떨어지면 아파요! 침대에는 "눕다"예요.']]},
+   {ask:'몇 시에 누울까요? 추천해 주세요.',opts:[['아홉 시에 누우세요.',1],['아홉 시 동안 누우세요.',0,'"동안"은 얼마나 오래예요. 아홉 시간 동안! 너무 길어요. 시간은 "에"를 써요.']]},
+   {say:'좋아요! 아홉 시에 누울 거예요. 핸드폰도 안 볼게요.',award:['눕다']}]},
+ {id:'jina',name:'지나',x:7,y:5,dir:'up',look:{hair:'#7A3E22',skin:'#F3D0B0',shirt:'#E07A5F',pants:'#3D5A80',long:1},badge:['떨어지다'],
+  after:'이제 병을 탁자 가운데에 놓았어요. 안 떨어져요!',
+  talk:[
+   {say:'앗! 방금 "쨍그랑" 소리 들었어요?'},
+   {ask:'병이 탁자에서 ___.',opts:[['떨어졌어요',1],['놓았어요',0,'병이 위에서 아래로 갔어요. 그건 "떨어지다"예요.'],['누웠어요',0,'병은 눕지 않아요! 😄 위에서 아래로 → "떨어지다".']]},
+   {say:'다행히 안 깨졌어요.'},
+   {ask:'당신도 물건을 떨어뜨린 적 있어요?',opts:[['네, 핸드폰을 떨어뜨렸어요.',1],['네, 핸드폰이 떨어뜨렸어요.',0,'"떨어뜨리다"는 내가 해요. 그래서 "핸드폰을" 떨어뜨렸어요. (핸드폰이 떨어졌어요 도 돼요!)']]},
+   {say:'아이고! 저도 자주 떨어뜨려요.',award:['떨어지다']}]},
+ {id:'junho',name:'준호',x:11,y:10,dir:'down',look:{hair:'#1E1E24',skin:'#E8B98F',shirt:'#3FA86B',pants:'#2E3548'},badge:['놓다','넣다'],
+  after:'핸드폰은 주머니에 넣었어요. 이제 안전해요.',
+  talk:[
+   {say:'제 핸드폰 어디 있지…?'},
+   {say:'아! 기억났어요. 아까 탁자 위에 뒀어요.'},
+   {w:'놓다',ask:'핸드폰을 탁자에 ___.',opts:[['놓았어요',1],['넣었어요',0,'탁자는 위에 둬요. 위 → "놓다".']]},
+   {say:'찾았어요! 이제 안 잃어버릴 거예요.'},
+   {w:'넣다',ask:'핸드폰을 주머니에 ___.',opts:[['넣었어요',1],['놓았어요',0,'주머니는 안에 들어가요. 안 → "넣다".']]},
+   {say:'위에는 놓다, 안에는 넣다! 고마워요.',award:['놓다','넣다']}]},
+ {id:'sabeom',name:'사범님',x:4,y:14,dir:'down',look:{hair:'#9A9AA3',skin:'#E6B892',shirt:'#F4F4F4',pants:'#F4F4F4',belt:'#1C1C1C'},badge:['시합'],
+  after:'대련은 연습, 시합은 진짜! 힘내요.',
+  talk:[
+   {say:'어서 와요! 여기는 가라테 도장이에요.'},
+   {say:'친구랑 연습하는 건 "대련"이에요.'},
+   {ask:'다른 사람이랑 규칙대로 겨루는 건 뭐예요?',opts:[['시합',1],['대련',0,'대련은 연습이에요. 진짜 겨루기는 "시합"이에요.'],['관중',0,'관중은 보는 사람이에요. 겨루기는 "시합"이에요.']]},
+   {ask:'축구 ___장에 가 봤어요?',opts:[['경기',1],['시합',0,'"경기장"이라고 해요. "시합장"은 안 써요.']]},
+   {say:'좋아요! 경기장에 가 보세요. 선수가 기다려요.',award:['시합']}]},
+ {id:'ref',name:'심판',x:20,y:4,dir:'left',look:{hair:'#2B2B2B',skin:'#E3B48C',shirt:'stripe',pants:'#1F1F1F'},badge:['규칙','심판'],
+  after:'반칙은 안 돼요! 규칙을 지키세요.',
+  talk:[
+   {say:'안녕하세요. 저는 심판이에요.'},
+   {say:'저는 시합을 봐요. 그리고 결정해요.'},
+   {w:'규칙',ask:'시합에서 지켜야 하는 건 뭐예요?',opts:[['규칙',1],['승부',0,'이건 되고, 이건 안 돼요. 그게 "규칙"이에요.'],['관중',0,'관중은 지키는 게 아니에요! 😄 "규칙"을 지켜요.']]},
+   {w:'심판',ask:'누가 이겼는지 누가 말해요?',opts:[['심판',1],['관중',0,'관중은 그냥 봐요. 결정은 심판이 해요.']]},
+   {say:'정답! 이제 링 위의 선수랑 시합해 보세요.',award:['규칙','심판']}]},
+ {id:'sua',name:'관중 수아',x:17,y:2,dir:'down',look:{hair:'#C0582E',skin:'#F3D0B0',shirt:'#F2C94C',pants:'#3D5A80',long:1},badge:['관중'],
+  after:'힘내라! 힘내라!',
+  talk:[
+   {say:'와아아! 힘내라!'},
+   {say:'저는 관중이에요. 앉아서 구경해요.'},
+   {ask:'관중은 누가 이겼는지 결정할 수 있어요?',opts:[['아니요, 그냥 봐요.',1],['네, 결정해요.',0,'결정은 심판이 해요. 관중은 보고 소리 질러요.']]},
+   {ask:'콘서트에도 ___이 있어요. 노래를 들어요.',opts:[['관중',1],['심판',0,'콘서트에 심판은 없어요! 듣는 사람들은 "관중"이에요.']]},
+   {say:'맞아요! 같이 응원해요~',award:['관중']}]},
+ {id:'fan1',name:'관중',x:15,y:2,dir:'down',look:{hair:'#2F2F38',skin:'#DDAE85',shirt:'#5B8BD9',pants:'#333'},
+  talk:[{say:'우와! 관중이 진짜 많죠? 오늘 큰 시합이에요!'}]},
+ {id:'fan2',name:'관중',x:19,y:2,dir:'down',look:{hair:'#E0C070',skin:'#F3D0B0',shirt:'#D9544B',pants:'#333'},
+  talk:[{say:'저는 매주 경기장에 와요. 앉아서 구경하는 게 좋아요.'}]},
+ {id:'taeo',name:'선수 태오',x:17,y:5,dir:'down',look:{hair:'#1A1A1A',skin:'#D9A47A',shirt:'#F4F4F4',pants:'#F4F4F4',belt:'#1C1C1C'},badge:['승부'],
+  after:'다음엔 제가 이길 거예요!',
+  /* gate: you need the referee's badge before the match */
+  script:()=>(!has('심판')&&!has('승부'))?[{say:'시합하고 싶어요? 먼저 심판님한테 규칙을 들으세요!'}]:null,
+  talk:[
+   {say:'좋아요! 저랑 시합해요!'},
+   {say:'시합 하나에 승부가 세 개 있어요. 준비됐어요?'},
+   {ask:'첫 번째 승부! "이기다"의 반대는?',opts:[['지다',1],['눕다',0,'눕다는 침대에서 해요! 이기다 ↔ "지다".'],['놓다',0,'놓다는 물건을 둬요. 이기다 ↔ "지다".']]},
+   {ask:'두 번째 승부! 시합 하나___ 승부가 여러 개 있어요.',opts:[['에',1],['의',0,'안에 있는 것은 "에"를 써요. 시합 하나에!']]},
+   {ask:'마지막 승부! 이기고 지는 결과를 뭐라고 해요?',opts:[['승부',1],['관중',0,'관중은 보는 사람이에요. 이기고 지는 건 "승부"예요.'],['규칙',0,'규칙은 지키는 거예요. 이기고 지는 건 "승부"예요.']]},
+   {say:'으악! 제가 졌어요. 세 승부 다 이겼어요!'},
+   {who:'심판',say:'승부 끝! 도전자 승리!',award:['승부']}]},
+ {id:'arm',name:'팔씨름 아저씨',x:19,y:15,dir:'right',look:{hair:'#5A3A22',skin:'#D9A47A',shirt:'#B5654A',pants:'#3A3A48'},
+  talk:[
+   {say:'팔씨름 할래요? 팔꿈치를 탁자에 놓아요.'},
+   {ask:'팔씨름은 "시합"이 자연스러워요, "경기"가 자연스러워요?',opts:[['시합',1],['경기',0,'작은 겨루기는 "시합"이 자연스러워요. 팔씨름 시합!']]},
+   {say:'맞아요! 으으으… 제가 이겼어요! 하하. 또 와요!'}]},
+ ],
+});
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 2편 · 도서관과 카페
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   This one adds a side quest: borrow a book, read it on the bench, return it within {LIMIT} steps.
+   ===================================================================== */
+(()=>{
+const LIMIT=80; // steps until the library book is due
+const left=()=>Math.max(0,LIMIT-state.steps);
+/* library questions (shared by the librarian's two visits and by review) */
+const LB=[
+ {w:'빌리다',ask:'책을 가져가요. 나중에 다시 가져와요. 책을 ___.',opts:[['빌려요',1],['빌려줘요',0,'"빌려주다"는 제가 해요! 사서는 빌려줘요. 손님은 "빌려요".'],['반납해요',0,'반납은 다시 가져올 때예요. 가져갈 때는 "빌리다".']]},
+ {w:'빌리다',ask:'손님은 책을 빌려요. 사서는 책을 ___.',opts:[['빌려줘요',1],['빌려요',0,'주는 사람은 "빌려주다"예요. 빌리다 ↔ 빌려주다.']]},
+];
+const LR=[
+ {w:'반납하다',ask:'다 읽은 책을 도서관에 다시 가져와요. 책을 ___.',opts:[['반납해요',1],['빌려요',0,'빌리는 건 가져갈 때예요. 다시 가져오면 "반납해요".'],['돌아가요',0,'"돌아가다"는 사람이 가는 거예요. 책은 "반납해요"!']]},
+ {w:'반납하다',ask:'책을 돌려줘야 하는 날은 ___이에요.',opts:[['반납일',1],['생일',0,'😄 생일은 태어난 날이에요. 책을 돌려주는 날은 "반납일".']]},
+ {w:'반납하다',ask:'반납일이 지나면 돈을 내요. 그 돈은 ___예요.',opts:[['연체료',1],['반납일',0,'반납일은 날짜예요. 늦으면 내는 돈은 "연체료".'],['조합',0,'조합은 섞는 거예요! 늦으면 내는 돈은 "연체료".']]},
+];
+
+
+CARTRIDGES.push({
+ id:'c2', n:'2편', title:'도서관과 카페', color:'#5B8BD9', save:'daneo-maul-v2',
+ words:[['빌리다','to borrow'],['반납하다','to return (library)'],['돌려주다','to give back'],['빨래','laundry'],['참다','to hold back'],['견디다','to endure'],['조합','combination'],['어울리다','to go well together'],['구현','realization'],['개선하다','to improve'],['중립적','neutral']],
+ start:{x:10,y:9,dir:'down'},
+ fresh:{book:'none',steps:0,late:false},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['책을 <b>빌리다</b> ↔ 책을 <b>빌려주다</b>','도서관에 <b>반납해요</b> · 친구한테 <b>돌려줘요</b>','<b>돌아가다</b>는 사람이 가요 · <b>돌려주다</b>는 물건을 줘요','<b>참다</b>: 하고 싶은 걸 안 해요 · <b>견디다</b>: 힘든 걸 버텨요','<b>고치다</b>: 고장 난 걸 · <b>개선하다</b>: 더 좋게','집을 <b>짓다</b> · 강아지가 <b>짖다</b>'],
+ intro:['단어 마을에 새 이웃들이 이사 왔어요!','도서관, 카페, 빨래방, 공사장… 사람들한테 가서 A 버튼으로 말해요.','! 가 있는 사람한테 배지가 있어요. 한 번에 다 맞히면 ★ 예요.','도서관 책은 반납일이 있어요. 늦으면 연체료! 📕'],
+ done:['축하해요! 배지 열한 개를 다 모았어요! 🎉','빌리다, 반납하다, 돌려주다, 빨래, 참다, 견디다, 조합, 어울리다, 구현, 개선하다, 중립적!','머리 위에 ? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열한 개! 모든 단어가 완벽해요!','오늘 한국어 실력이 많이 개선됐어요. 잘 견뎠어요! 💪'],
+
+ /* side quest hooks */
+ onStep(){
+  if(state.book==='have'||state.book==='read'){
+   state.steps++;
+   if(state.steps>=LIMIT&&!state.late){state.late=true;toast('반납일이 지났어요! 😱');sfx('no')}
+  }
+ },
+ quest(){
+  if(state.book==='have')return {late:state.late,text:state.late?'📕 반납일이 지났어요! 벤치에서 읽고 빨리 반납해요.':`📕 연못 옆 벤치에서 책을 읽어요 · 반납일까지 ${left()}걸음`};
+  if(state.book==='read')return {late:state.late,text:state.late?'📕 반납일이 지났어요! 빨리 사서한테 반납해요.':`📕 다 읽었어요! 사서한테 반납해요 · ${left()}걸음 남았어요`};
+  return null;
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'L':{tile:'libWall'},'C':{tile:'cafeWall'},'W':{tile:'laundryWall'},'=':{tile:'wood',walk:1},'q':{tile:'floor',walk:1},'_':{tile:'sand',walk:1},
+  'k':{tile:'shelf'},'e':{tile:'desk'},'c':{tile:'counter',over:1},'K':{tile:'cakeTable'},'D':{tile:'laptopTable'},'w':{tile:'washer'},
+  'f':{tile:'frame'},'#':{tile:'bricks'},'~':{tile:'pond'},'n':{tile:'bench'},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.LLLLLLLLL...CCCCCCCCC..T",
+"T.Lkkk=kkkL...C=======C..T",
+"T.L=======L...C=c=====C..T",
+"T.L=e===e=L...C===K=D=C..T",
+"T.L=======L...C=======C..T",
+"T.LLLL=LLLL...CCCC=CCCC..T",
+"T...p.,...p.......,.p....T",
+"T.**..,,,,,,,,,,,,,,,,,..T",
+"T.....,....~~~~.....,....T",
+"T....,,....~~~~n....,....T",
+"T.WWWqWWWp..p.......,....T",
+"T.WqqqqqW..____________..T",
+"T.WwqwqwW.._ffff_##____..T",
+"T.WqqqqqW.._f__f_______..T",
+"T.WqqqqqW.._ffff_______..T",
+"T.WWWWWWW..____________..T",
+"T........................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '10,8':['표지판','단어 마을 · 새 이웃이 이사 왔어요! 배지 열한 개를 모아요.'],
+ '4,8':['표지판','도서관 · 조용히 해 주세요. 웃음은 참아요. 🤫'],
+ '20,8':['표지판','카페 조합 · 오늘의 새 메뉴 있어요!'],
+ '9,12':['표지판','빨래방 · 세탁기 세 대 있어요.'],
+ '12,12':['표지판','공사 중 · 새 집을 짓고 있어요.'],
+},
+ things:{
+ T:sayAt(...TREES),
+ L:sayAt('도서관 벽이에요. 안에서 책 냄새가 나요. 📚','도서관이에요. 안은 아주 조용해요. 🤫','창문 안에 책장이 많아요.'),
+ C:sayAt('카페 벽이에요. 커피 냄새가 나요. ☕','창문으로 맛있는 케이크가 보여요. 🍰','카페 안에서 사람들이 이야기해요.'),
+ W:sayAt('안에서 세탁기 소리가 들려요. 윙윙~','깨끗한 옷 냄새가 나요. 🧺','창문이 따뜻해요. 안에 세탁기가 많아요.'),
+ k:()=>[{say:'책이 많아요. 빌리고 싶으면 사서한테 말해요.'}],
+ e:()=>[{say:'누가 시험 공부를 하고 있어요. 조용히… 🤫'}],
+ c:()=>[{say:'카운터예요. 커피 냄새가 좋아요.'}],
+ K:()=>[{say:'케이크가 있어요. 🍰 먹고 싶어요… 그런데 참아요!'}],
+ D:()=>[{say:'노트북이에요. 화면에 작은 게임이 있어요. 🎮'}],
+ w:()=>[{say:'세탁기가 돌아가요. 윙윙~ 빨래 중이에요.'}],
+ f:()=>[{say:'집을 짓고 있어요. 아직 벽이 없어요.'}],
+ '#':()=>[{say:'벽돌이 무거워요. 혼자 들 수 있어요? 💪'}],
+ '~':sayAt('연못이에요. 누가 책을 떨어뜨렸어요! 연체료보다 더 큰일이에요. 📕💦','오리가 조용히 헤엄쳐요. 도서관 옆이라서 오리도 조용해요. 🤫🦆'),
+ n:()=>{
+  if(state.book==='have') return [
+   {say:'벤치에 앉아서 책을 읽어요… 📖'},
+   {say:'…페이지를 넘겨요… 피카츄가 바다를 건너요!'},
+   {say:'다 읽었어요! 이제 사서한테 반납해야 돼요.',set:()=>{state.book='read'}}];
+  if(state.book==='none') return [{say:'연못 옆 벤치예요. 책 읽기 좋은 곳이에요.'}];
+  return [{say:'벤치에 앉아서 연못을 봐요. 평화로워요.'}];
+ },
+ },
+
+ npcs:[
+ {id:'librarian',name:'사서',x:6,y:4,dir:'down',look:{hair:'#4A3428',skin:'#F1C9A5',shirt:'#5B8BD9',pants:'#3A3F55',long:1},badge:['빌리다','반납하다'],
+  after:'책 또 빌리러 오세요. 조용히~ 🤫',
+  pool:[...LB,...LR],
+  status:()=>state.book==='have'?'wait':undefined,
+  script:()=>{
+   if(state.book==='none') return [
+    {say:'어서 오세요. 여기는 도서관이에요. 📚'},
+    {say:'오늘 재미있는 책이 있어요. 「피카츄의 여행」이에요.'},
+    LB[0],LB[1],
+    {say:'여기 있어요! 책을 빌렸어요.',award:['빌리다'],set:()=>{state.book='have';state.steps=0;state.late=false}},
+    {say:`반납일은 ${LIMIT}걸음 후예요. 늦으면 연체료가 있어요!`},
+    {say:'안에는 시험 공부하는 사람이 많아요. 연못 옆 벤치에서 읽으세요.'}];
+   if(state.book==='have') return [{say:state.late?'반납일이 벌써 지났어요! 빨리 벤치에서 읽고 오세요.':`아직 다 안 읽었어요? 연못 옆 벤치에서 읽으세요. 반납일까지 ${left()}걸음 남았어요.`}];
+   if(state.book==='read'){
+    const s=[{say:'책을 다 읽었어요? 재미있었어요?'}];
+    if(state.late) s.push({say:'어… 그런데 반납일이 지났어요! 😅'},LR[2],{say:'괜찮아요. 이번만 봐 드릴게요.'});
+    s.push(LR[0],LR[1]); if(!state.late) s.push(LR[2]);
+    s.push({say:'반납 완료! 감사합니다.',award:['반납하다'],set:()=>{state.book='returned'}});
+    return s;}
+   return null;
   }},
-};
-const INTRO=['단어 마을에 온 걸 환영해요!','마을 사람들한테 가서 A 버튼으로 말해요.','머리 위에 ! 가 있는 사람한테 배지가 있어요. 배지 아홉 개를 모아요!'].map(say=>({say}));
-const DONE=['축하해요! 배지 아홉 개를 다 모았어요!','눕다, 떨어지다, 놓다, 넣다, 시합, 승부, 규칙, 심판, 관중. 완벽해요!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'];
-const questText=()=>'';  // no 목표 line: the help under the pad says what to do, as before
-return {WORDS,DICT,CONFUSE,Q,ITEMS:{},ZONES,NPC,FOLLOW:null,INTRO,DONE,questText,TILES:V.TILES};
-}});
+ {id:'minji',name:'민지',x:8,y:10,dir:'up',look:{hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#E07A5F',pants:'#3D5A80',long:1},badge:['돌려주다'],
+  after:'CD 고마워요! 다음엔 제가 게임 빌려줄게요.',
+  talk:[
+   {say:'아, 안녕하세요!'},
+   {say:'지난주에 제 게임 CD 빌려 갔죠? 😄'},
+   {ask:'친구한테 빌린 물건은 친구한테 ___.',opts:[['돌려줘요',1],['돌아가요',0,'"돌아가다"는 사람이 가요. "집에 돌아가요." 물건은 "돌려줘요".'],['빌려요',0,'벌써 빌렸어요! 이제 다시 줘요 → "돌려줘요".']]},
+   {ask:'친구한테는 "반납"보다 "돌려주다"가 자연스러워요. 왜요?',opts:[['반납은 도서관 같은 곳에 해요.',1],['반납은 음식이에요.',0,'😄 아니요! 반납은 도서관, 회사 같은 곳에 돌려주는 거예요.']]},
+   {ask:'내일 CD를 ___ 거예요.',opts:[['돌려줄',1],['돌아줄',0,'"돌아주다"는 없어요. 돌려주다 → "돌려줄 거예요"!'],['반납할',0,'친구한테는 좀 딱딱해요. "돌려줄 거예요"가 자연스러워요.']]},
+   {say:'좋아요! 내일 봐요~',award:['돌려주다']}]},
+ {id:'laundry',name:'빨래방 사장님',x:4,y:16,dir:'up',look:{hair:'#8A8A93',skin:'#E8B98F',shirt:'#6FB7B1',pants:'#3A3A48'},badge:['빨래'],
+  after:'빨래 끝나면 잘 개세요~',
+  talk:[
+   {say:'어서 오세요! 여기는 빨래방이에요.'},
+   {say:'간판에는 "세탁"을 많이 써요. 그런데 말할 때는 "빨래"를 많이 써요.'},
+   {ask:'"주말에 뭐 했어요?" 가장 자연스러운 대답은?',opts:[['주말에 빨래했어요.',1],['주말에 세탁했어요.',0,'틀린 건 아니에요! 그런데 말할 때는 "빨래했어요"가 더 자연스러워요.']]},
+   {ask:'"빨래"는 순 한국어예요. "세탁"은?',opts:[['한자어',1],['순 한국어',0,'세탁(洗濯)은 한자에서 왔어요. 그래서 한자어예요.']]},
+   {ask:'"빨래가 많아요." 여기서 빨래는 뭐예요?',opts:[['빨 옷',1],['빨래하는 행동',0,'"빨래해요"는 행동이에요. "빨래가 많아요"는 빨 옷이에요.']]},
+   {ask:'옷을 맡기는 가게는 ___예요.',opts:[['세탁소',1],['빨래소',0,'"빨래소"는 없어요. 가게랑 기계는 "세탁소", "세탁기"처럼 한자어를 써요.']]},
+   {say:'완벽해요! 빨래 끝!',award:['빨래']}]},
+ {id:'owner',name:'카페 사장님',x:16,y:3,dir:'down',look:{hair:'#3B2A22',skin:'#E8B98F',shirt:'#F4F4F4',pants:'#6B4A2B',belt:'#6B4A2B'},badge:['조합','어울리다'],
+  after:'오늘 커피하고 쿠키가 잘 어울려요. ☕',
+  talk:[
+   {say:'어서 오세요! 오늘의 새 메뉴가 있어요.'},
+   {say:'밥, 콩, 치즈! 같이 섞어서 만들었어요.'},
+   {w:'조합',ask:'밥하고 콩하고 치즈를 ___해서 만들었어요.',opts:[['조합',1],['구현',0,'구현은 생각을 진짜로 만드는 거예요. 여러 개를 같이 → "조합".'],['중립',0,'중립은 편을 안 드는 거예요. 여러 개를 같이 → "조합".']]},
+   {w:'어울리다',ask:'커피하고 단 간식은 잘 ___.',opts:[['어울려요',1],['어울리다',0,'"어울리다"는 사전 모양이에요. 말할 때는 "어울려요".'],['조합해요',0,'"잘 조합해요"는 어색해요. 같이 있으면 좋아요 → "잘 어울려요".']]},
+   {w:'어울리다',ask:'"이 모자가 잘 어울려요." 무슨 뜻이에요?',opts:[['모자가 나한테 좋아 보여요.',1],['모자를 섞었어요.',0,'섞는 건 "조합"이에요. 어울리다 = 같이 있으면 좋아 보여요.']]},
+   {say:'좋아요! 커피 한 잔 드릴게요. ☕',award:['조합','어울리다']}]},
+ {id:'diet',name:'손님 하나',x:18,y:4,dir:'down',look:{hair:'#C0582E',skin:'#F3D0B0',shirt:'#F2C94C',pants:'#3D5A80',long:1},badge:['참다'],
+  after:'(입에 케이크가 있어요.) 음… 내일부터 참을 거예요! 🍰',
+  talk:[
+   {say:'음… 이 케이크… 너무 맛있어 보여요.'},
+   {say:'그런데 저는 다이어트 중이에요.'},
+   {ask:'케이크를 먹고 싶어요. 그런데 안 먹어요. 케이크를 ___.',opts:[['참아요',1],['견뎌요',0,'견디다는 힘든 걸 오래 버텨요. 하고 싶은 걸 안 해요 → "참다".'],['돌려줘요',0,'😄 케이크를 누구한테 돌려줘요? 안 먹어요 → "참아요".']]},
+   {ask:'도서관이에요. 웃고 싶어요. 그런데 조용해야 돼요.',opts:[['웃음을 참아요.',1],['웃음을 반납해요.',0,'😄 웃음은 반납할 수 없어요! 하고 싶은 걸 안 해요 → "참아요".']]},
+   {ask:'"참다"는 꼭 슬플 때만 써요?',opts:[['아니요, 좋은 것도 참아요.',1],['네, 슬플 때만 써요.',0,'아니에요! 케이크처럼 좋은 것도 참아요.']]},
+   {say:'…아니, 못 참겠어요! 한 입만! 🍰',award:['참다']}]},
+ {id:'dev',name:'게임 개발자',x:20,y:6,dir:'up',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#3FA86B',pants:'#2E3548'},badge:['개선하다'],
+  after:'초록 얼굴 경고를 넣었어요! 이제 다들 이해해요. 🎮',
+  talk:[
+   {say:'안녕하세요! 저는 작은 게임을 만들어요. 🎮'},
+   {say:'캐릭터가 같은 과일을 너무 많이 먹으면 토해요.'},
+   {say:'그런데 사람들이 잘 이해를 못 해요. 😢'},
+   {ask:'그래서 게임을 더 좋게 만들 거예요. 게임을 ___할 거예요.',opts:[['개선',1],['반납',0,'게임을 도서관에 가져가요? 😄 더 좋게 → "개선".'],['중립',0,'중립은 편을 안 드는 거예요. 더 좋게 → "개선".']]},
+   {ask:'토하기 전에 미리 알려주면 어때요? 그건 ___예요.',opts:[['경고',1],['연체료',0,'연체료는 늦게 반납하면 내는 돈이에요! 미리 알려주는 건 "경고".'],['조합',0,'조합은 섞는 거예요. 미리 알려주는 건 "경고".']]},
+   {ask:'게임에 버그가 있어요. 안 돼요. 버그를 ___.',opts:[['고쳐요',1],['개선해요',0,'고장 난 건 "고치다". 괜찮은 걸 더 좋게 → "개선하다".']]},
+   {say:'글자 말고 그림으로 경고할 거예요. 캐릭터 위에 작은 초록 얼굴!'},
+   {say:'고마워요! 계속 연습하면 한국어 실력도 개선될 거예요.',award:['개선하다']}]},
+ {id:'worker',name:'인부 아저씨',x:16,y:15,dir:'left',still:1,look:{hair:'#5A3A22',skin:'#D9A47A',shirt:'#E9A23B',pants:'#3A3A48',cap:'#F2C94C'},badge:['견디다'],
+  after:'조금만 더 견디면 집이 완성돼요!',
+  talk:[
+   {say:'휴… 저는 집을 짓고 있어요.'},
+   {ask:'저는 집을 ___ 있어요.',opts:[['짓고',1],['짖고',0,'😄 "짖다"는 강아지가 멍멍 해요! 집은 "짓다".']]},
+   {say:'오늘은 너무 더워요. 그리고 많이 피곤해요.'},
+   {ask:'피곤해도 일을 ___.',opts:[['견뎌야 돼요',1],['반납해야 돼요',0,'일은 반납 못 해요! 😄 힘든 걸 버텨요 → "견뎌야 돼요".'],['어울려야 돼요',0,'어울리다는 같이 있으면 좋은 거예요. 힘든 걸 버텨요 → "견디다".']]},
+   {ask:'파고의 겨울은 길고 추워요. 몇 달 동안 추위를 ___.',opts:[['견뎌요',1],['조합해요',0,'추위를 섞어요? 😄 힘든 걸 오래 버텨요 → "견뎌요".']]},
+   {ask:'"견디다"는 뭐예요?',opts:[['힘든 시간을 끝까지 버텨요.',1],['케이크를 안 먹어요.',0,'그건 "참다"예요! 견디다는 힘든 걸 오래 버티는 거예요.']]},
+   {say:'맞아요! 우리 같이 견뎌요. 💪',award:['견디다']}]},
+ {id:'architect',name:'건축가',x:20,y:16,dir:'up',look:{hair:'#1E1E24',skin:'#E8B98F',shirt:'#8E7CC3',pants:'#2E3548'},badge:['구현'],
+  after:'벽을 세우면 설계가 진짜 집이 돼요. 📐',
+  talk:[
+   {say:'이건 제 설계도예요. 📐'},
+   {say:'지금은 종이 그림이에요. 그런데 곧 진짜 집이 돼요!'},
+   {ask:'설계를 진짜 건물로 만들어요. 설계를 ___해요.',opts:[['구현',1],['조합',0,'조합은 여러 개를 섞는 거예요. 생각을 진짜로 → "구현".'],['개선',0,'개선은 더 좋게 만드는 거예요. 생각을 진짜로 → "구현".']]},
+   {ask:'"구현"은 뭐예요?',opts:[['생각을 진짜로 만드는 거예요.',1],['더 좋게 만드는 거예요.',0,'그건 "개선"이에요!'],['어느 쪽도 편들지 않는 거예요.',0,'그건 "중립적"이에요!']]},
+   {ask:'소설 속 세계를 게임으로 만들고 싶어요. 소설의 세계를 ___하고 싶어요.',opts:[['구현',1],['반납',0,'소설을 도서관에 가져가요? 😄 세계를 진짜로 → "구현".']]},
+   {say:'멋져요! 꿈도 구현할 수 있어요.',award:['구현']}]},
+ {id:'mod',name:'도윤',x:23,y:10,dir:'down',look:{hair:'#9A9AA3',skin:'#E6B892',shirt:'#B8B8B0',pants:'#5A5A60'},badge:['중립적'],
+  after:'둘 다 좋아요. 저는 계속 중립적이에요. 😌',
+  talk:[
+   {say:'아이고, 또 싸워요… 저는 아무 편도 안 들어요.'},
+   {ask:'어느 쪽도 편들지 않아요. 저는 ___이에요.',opts:[['중립적',1],['조합적',0,'그런 말은 없어요! 편을 안 들어요 → "중립적".'],['개선적',0,'그런 말은 없어요! 편을 안 들어요 → "중립적".']]},
+   {ask:'뉴스는 한쪽만 좋게 말하면 안 돼요. 뉴스는 ___이어야 해요.',opts:[['중립적',1],['구현',0,'구현은 생각을 진짜로 만드는 거예요. 한쪽 편 없이 → "중립적".']]},
+   {ask:'"좋지도 나쁘지도 않아요." 이건 어떤 의견이에요?',opts:[['중립적인 의견',1],['연체료 의견',0,'😄 연체료는 늦게 반납한 돈이에요! → "중립적인 의견".']]},
+   {who:'강아지파',ask:'그래서! 강아지예요, 고양이예요?',opts:[['저는 중립적이에요. 둘 다 좋아요.',1],['강아지예요!',0,'(고양이파가 화났어요!) 음… 그럼 중립적이 아니에요. 😄'],['고양이예요!',0,'(강아지파가 화났어요!) 음… 그럼 중립적이 아니에요. 😄']]},
+   {say:'(두 사람이 웃었어요.) 스위스 같네요!',award:['중립적']}]},
+ {id:'dogfan',name:'강아지파',x:22,y:10,dir:'right',still:1,look:{hair:'#7A3E22',skin:'#F3D0B0',shirt:'#D9544B',pants:'#333'},
+  talk:[{say:'강아지가 최고예요! 강아지는 간식을 물고 달려요. 귀여워요!'}]},
+ {id:'catfan',name:'고양이파',x:24,y:10,dir:'left',still:1,look:{hair:'#E0C070',skin:'#F1C9A5',shirt:'#5B8BD9',pants:'#333'},
+  talk:[{say:'아니에요! 고양이가 최고예요. 조용하고 멋있어요.'}]},
+ ],
+});
+})();
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 3편 · 연구소와 포켓몬 센터
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   Story: 오박사 gives you 메지, who follows you (follower). Battle the rival → 메지 gets hurt → heal at the center.
+   state.stage: 0 no dog · 1 메지 follows · 2 메지 hurt after the battle · 3 healed
+   ===================================================================== */
+(()=>{
+const PROF=[
+ {w:'박사',ask:'공부를 아주 많이 했어요. 그리고 연구해요. 그런 사람은 ___예요.',opts:[['박사',1],['상대',0,'상대는 같이 싸우는 사람이에요. 공부 많이 하고 연구해요 → "박사".'],['관중',0,'관중은 보는 사람이에요. 공부 많이 하고 연구해요 → "박사".']]},
+ {w:'박사',ask:'대학교에서 가르치는 사람은 누구예요?',opts:[['교수',1],['박사',0,'박사는 공부를 많이 한 사람이에요. 대학교에서 가르치면 "교수". 둘 다인 사람도 있어요!'],['선생님',0,'초등학교, 중학교, 고등학교는 "선생님". 대학교는 "교수"예요.']]},
+ {w:'박사',ask:'박사는 과학만 있어요?',opts:[['아니요, 역사 박사, 음악 박사도 있어요.',1],['네, 과학만 있어요.',0,'아니에요! 역사 박사, 음악 박사도 있어요.']]},
+ {w:'연구',ask:'새로운 것을 찾으려고 깊이 공부해요. 그건 ___예요.',opts:[['연구',1],['공격',0,'공격은 싸울 때 해요! 깊이 공부해요 → "연구".'],['회복',0,'회복은 다시 건강해지는 거예요. 깊이 공부해요 → "연구".']]},
+ {w:'연구',ask:'박사님은 연구소에서 뭐 해요?',opts:[['포켓몬을 연구해요.',1],['포켓몬을 물어요.',0,'😄 박사님은 안 물어요! 연구소에서는 "연구해요".']]},
+];
+const RIVAL=[
+ {w:'상대',ask:'배틀에서 나하고 싸우는 사람은 ___예요.',opts:[['상대',1],['상태',0,'소리가 비슷해요! 상태는 지금 건강, 기분이에요. 싸우는 사람 → "상대".'],['심판',0,'심판은 규칙을 지키게 하는 사람이에요. 싸우는 사람 → "상대".']]},
+ {w:'기술',ask:'"몸통박치기", "물기"… 포켓몬이 싸울 때 쓰는 이건 다 ___이에요.',opts:[['기술',1],['규칙',0,'규칙은 따라야 하는 거예요. 싸울 때 쓰는 방법 → "기술".'],['연구',0,'연구는 박사님이 해요! 싸울 때 쓰는 방법 → "기술".']]},
+ {w:'기술',ask:'요리를 아주 잘해요. 요리 ___이 좋아요.',opts:[['기술',1],['공격',0,'요리로 공격해요? 😄 하는 방법이 좋아요 → "기술".']]},
+ {w:'공격',ask:'메지가 꼬렛을 물어요! 메지가 ___해요.',opts:[['공격',1],['회복',0,'회복은 다시 건강해지는 거예요. 상대를 때려요 → "공격".'],['연구',0,'싸울 때는 연구 안 해요! 상대를 때려요 → "공격".']]},
+ {w:'공격',ask:'"공격"의 반대는 뭐예요?',opts:[['방어',1],['기술',0,'기술은 하는 방법이에요. 공격 ↔ "방어".']]},
+];
+const NURSE=[
+ {w:'상태',ask:'메지가 많이 아파요. 메지 ___가 안 좋아요.',opts:[['상태',1],['상대',0,'소리가 비슷해요! 상대는 싸우는 사람이에요. 지금 건강 → "상태".']]},
+ {w:'상태',ask:'"상태"는 뭐예요?',opts:[['지금 어때요? 건강이나 기분이에요.',1],['같이 싸우는 사람이에요.',0,'그건 "상대"예요! 상태는 지금 건강, 기분이에요.']]},
+ {w:'회복',ask:'아픈 포켓몬이 다시 건강해져요. 그건 ___이에요.',opts:[['회복',1],['공격',0,'공격은 상대를 때려요. 다시 건강해져요 → "회복".'],['연구',0,'연구는 깊이 공부해요. 다시 건강해져요 → "회복".']]},
+ {w:'회복',ask:'감기에 걸렸어요. 빨리 ___ 돼요.',opts:[['나아야',1],['나야',0,'낫다 → 나아요 → "나아야 돼요". ㅅ이 빠져요!'],['물어야',0,'😄 물다는 이로 잡아요. 감기는 "나아야 돼요".']]},
+];
+
+CARTRIDGES.push({
+ id:'c3', n:'3편', title:'연구소와 포켓몬 센터', color:'#3FA86B', save:'daneo-maul-v3',
+ words:[['박사','doctor (PhD)'],['연구','research'],['따르다','to follow'],['지키다','to keep, guard'],['상대','opponent'],['기술','skill, move'],['공격','attack'],['상태','condition'],['회복','recovery'],['들다','to lift; to like'],['물다','to bite']],
+ start:{x:10,y:9,dir:'down'},
+ fresh:{stage:0},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['<b>상대</b>: 같이 싸우는 사람 · <b>상태</b>: 지금 건강, 기분','사람을 <b>따라가요</b> · 규칙을 <b>따라요</b> · 규칙을 <b>지켜요</b>','<b>박사</b>: 공부 많이, 연구 · <b>교수</b>: 대학교에서 가르쳐요','가방을 <b>들어요</b> · 마음에 <b>들어요</b> · 돈이 <b>들어요</b>','이로 잡아요 → <b>물다</b> · 손으로 → <b>만지다</b>','집을 <b>지어요</b> · 강아지가 <b>짖어요</b>','낫다 → <b>나아요</b> · 눕다 → <b>누워요</b>'],
+ intro:['단어 마을 3편! 오늘은 포켓몬 연구소예요. 🔬','오박사님이 기다려요. 연구소에 가 보세요.','! 가 있는 사람한테 배지가 있어요. 한 번에 다 맞히면 ★ 예요.'],
+ done:['축하해요! 배지 열한 개를 다 모았어요! 🎉','박사, 연구, 따르다, 지키다, 상대, 기술, 공격, 상태, 회복, 들다, 물다!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열한 개! 모든 단어가 완벽해요!','메지도 기뻐서 짖어요. 멍멍! 🐶'],
+
+ quest(){
+  if(state.stage===0)return {text:'🔬 오박사 연구소에 가 보세요.'};
+  if(state.stage===1)return {text:'🐶 메지가 따라와요! 배틀 필드에서 라이벌이 기다려요.'};
+  if(state.stage===2)return {late:true,text:'💊 메지 상태가 안 좋아요! 포켓몬 센터에서 회복해요.'};
+  return null;
+ },
+ /* 메지 walks one step behind the player once the professor hands her over */
+ follower:{
+  name:'메지',look:{fur:'#E2B776',ear:'#9C6B3A'},
+  when:()=>state.stage>=1,
+  hurt:()=>state.stage===2,
+  talk:()=>state.stage===2
+   ?[{say:'끼잉… 🐶 (메지 상태가 안 좋아요.)'},{say:'빨리 포켓몬 센터에 가요!'}]
+   :state.stage===3
+   ?[{say:'멍멍! 🐶 메지가 다 회복했어요!'},{say:'메지가 짖으면서 꼬리를 흔들어요. 기분이 좋아요.'}]
+   :[{say:'멍멍! 🐶 (메지가 꼬리를 흔들어요.)'},{say:'메지가 당신을 잘 따라요!'}],
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'L':{tile:'labWall'},'P':{tile:'centerWall'},'=':{tile:'wood',walk:1},'q':{tile:'floor',walk:1},'_':{tile:'sand',walk:1},
+  'k':{tile:'shelf'},'e':{tile:'desk'},'c':{tile:'counter',over:1},'h':{tile:'healer'},'B':{tile:'field',walk:1},
+  'f':{tile:'frame'},'#':{tile:'bricks'},'~':{tile:'pond'},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.LLLLLLLLL...PPPPPPPPP..T",
+"T.Lkkk=kkkL...PqqqhqqqP..T",
+"T.L=e===e=L...PqqqqqqqP..T",
+"T.L=======L...PqcccccqP..T",
+"T.L=======L...PqqqqqqqP..T",
+"T.LLLL=LLLL...PPPPqPPPP..T",
+"T...p.,...p.......,.p....T",
+"T.**..,,,,,,,,,,,,,,,,,..T",
+"T.....,....~~~~.....,....T",
+"T.....,....~~~~.....,....T",
+"T.....,..........p..,....T",
+"T.______....BBBBBBBBBBBB.T",
+"T._ff_#_....BBBBBBBBBBBB.T",
+"T._ff___....BBBBBBBBBBBB.T",
+"T.______....BBBBBBBBBBBB.T",
+"T...........BBBBBBBBBBBB.T",
+"T........................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '10,8':['표지판','단어 마을 3편 · 메지와 같이 배지 열한 개를 모아요!'],
+ '4,8':['표지판','오박사 연구소 · 포켓몬 연구 중! 🔬'],
+ '20,8':['표지판','포켓몬 센터 · 아픈 포켓몬을 회복해요. 💗'],
+ '17,12':['표지판','배틀 필드 · 상대를 이기면 배지!'],
+ },
+ things:{
+ T:sayAt(...TREES),
+ L:sayAt('하얀 건물이에요. 창문 안에 컴퓨터가 많아요. 💻','안에서 삐삐 기계 소리가 나요.','큰 건물이에요. 문은 아래쪽에 있어요.'),
+ P:sayAt('포켓몬 센터 벽이에요. 빨간 지붕이 예뻐요. ❤️','센터 문은 아래쪽에 있어요.','안에서 띠리링 소리가 나요. 🎵'),
+ h:sayAt('포켓몬이 아프면 이 기계에 넣어요. 불이 반짝반짝해요. ✨'),
+ k:()=>[{say:'연구 책이 많아요. 📚 「포켓몬의 비밀」, 「강아지는 왜 짖을까?」…'}],
+ e:()=>[{say:'박사님 책상이에요. 연구 노트가 있어요. 📓'}],
+ c:()=>[{say:'포켓몬 센터 카운터예요.'}],
+ f:()=>[{say:'목수 아저씨가 집을 짓고 있어요. 🔨'}],
+ '#':()=>[{say:'벽돌이 무거워요. 혼자 들 수 있어요? 💪'}],
+ '~':sayAt('연못이에요. 잉어킹이 튀어요! 퐁당퐁당 🐟','물속에 꼬부기가 있어요? …아니에요, 그냥 돌이에요. 🐢'),
+ },
+
+ npcs:[
+ {id:'prof',name:'오박사',x:6,y:4,dir:'down',look:{hair:'#9A9AA3',skin:'#F1C9A5',shirt:'#F4F4F4',pants:'#6B4A2B'},badge:['박사','연구'],
+  after:'메지는 잘 지내요? 연구 결과가 기대돼요. 📓',
+  pool:PROF,
+  script:()=>state.stage>=1?null:[
+   {say:'어서 와요! 여기는 오박사 연구소예요. 🔬'},
+   {say:'저는 포켓몬을 연구해요. 사람들은 저를 "박사님"이라고 불러요.'},
+   PROF[0],PROF[1],PROF[3],
+   {say:'좋아요! 제 연구를 도와주세요. 이 강아지를 데려가요.',award:['박사','연구'],set:()=>{state.stage=1}},
+   {say:'이름은 메지예요. 🐶 메지가 당신을 따라갈 거예요!'},
+   {say:'배틀 필드에 라이벌이 기다려요. 같이 가 보세요!'}]},
+ {id:'aide',name:'조수',x:3,y:6,dir:'right',look:{hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#8CCBF5',pants:'#3A3F55',long:1},badge:['따르다'],
+  after:'오리 새끼들은 엄마를 따라가요. 🦆',
+  talk:[
+   {say:'안녕하세요! 저는 박사님 조수예요.'},
+   {ask:'강아지가 주인 뒤에서 걸어요. 강아지가 주인을 ___.',opts:[['따라가요',1],['지켜요',0,'지키다는 안전하게 해요. 뒤에서 걸어요 → "따라가요".'],['물어요',0,'😄 주인을 물면 안 돼요! 뒤에서 걸어요 → "따라가요".']]},
+   {ask:'게임에 규칙이 있어요. 규칙을 ___.',opts:[['따라요',1],['연구해요',0,'규칙은 연구하지 않아요. 규칙을 "따라요".'],['물어요',0,'😄 규칙은 물 수 없어요! 규칙을 "따라요".']]},
+   {ask:'따르다 → 따라요. 그럼 "제가 메지를 ___가요."',opts:[['따라',1],['따르',0,'"따르다"에서 ㅡ가 빠져요. 따르다 → 따라 → "따라가요"!']]},
+   {ask:'아기 오리들이 엄마 오리 뒤에서 걸어요. 엄마를 ___.',opts:[['따라가요',1],['지어요',0,'"짓다"는 집을 만들어요. 뒤에서 걸어요 → "따라가요".']]},
+   {say:'잘했어요! 사람도 따르고, 규칙도 따라요.',award:['따르다']}]},
+ {id:'guard',name:'경비원',x:16,y:8,dir:'down',look:{hair:'#1E1E24',skin:'#E3B48C',shirt:'#3D5A80',pants:'#2E3548',cap:'#2E3548'},badge:['지키다'],
+  after:'오늘도 센터를 지켜요. 이상 없어요! 💂',
+  talk:[
+   {say:'저는 포켓몬 센터 경비원이에요. 💂'},
+   {ask:'저는 센터를 안전하게 해요. 센터를 ___.',opts:[['지켜요',1],['따라요',0,'따르다는 뒤에 가요. 안전하게 해요 → "지켜요".'],['회복해요',0,'회복은 다시 건강해지는 거예요. 안전하게 해요 → "지켜요".']]},
+   {ask:'친구랑 약속했어요. 약속을 꼭 ___.',opts:[['지켜요',1],['들어요',0,'약속은 "지켜요"! 지키다는 약속, 규칙, 시간에 써요.'],['따라가요',0,'약속은 따라가지 않아요. 약속을 "지켜요".']]},
+   {ask:'심판은 어떤 사람이에요? 규칙을 ___ 사람이에요.',opts:[['지키게 하는',1],['물어보는',0,'심판은 묻는 사람이 아니에요. 규칙을 "지키게 하는" 사람이에요.']]},
+   {ask:'"규칙을 따라요"하고 "규칙을 지켜요", 뜻이 비슷해요?',opts:[['네, 비슷해요.',1],['아니요, 반대예요.',0,'반대 아니에요! 둘 다 규칙대로 해요. 비슷해요.']]},
+   {say:'좋아요! 센터는 제가 지킬게요.',award:['지키다']}]},
+ {id:'rival',name:'라이벌',x:20,y:15,dir:'left',still:1,look:{hair:'#C0582E',skin:'#F1C9A5',shirt:'#4F7BD6',pants:'#2E3548',cap:'#2E3548'},badge:['상대','기술','공격'],
+  after:'다음엔 제 공격을 견딜 수 있을까요? 😤',
+  pool:RIVAL,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [{say:'포켓몬 없어요? 그럼 배틀 못 해요.'},{say:'먼저 오박사 연구소에 가 보세요!'}];
+   if(state.stage>=2)return null;
+   return [
+    {say:'왔어요? 오늘 제가 당신의 상대예요! 😤'},
+    RIVAL[0],
+    {say:'가라, 꼬렛! … 메지도 나와요! 🐶'},
+    RIVAL[1],RIVAL[3],RIVAL[4],
+    {say:'으악! 제가 졌어요… 꼬렛이 쓰러졌어요.'},
+    {say:'그런데 메지도 많이 맞았어요. 메지 상태가 안 좋아 보여요…',award:['상대','기술','공격'],set:()=>{state.stage=2}},
+    {say:'포켓몬 센터에 가서 회복하세요!'}];
+  }},
+ {id:'nurse',name:'간호사',x:18,y:4,dir:'down',still:1,look:{hair:'#E07A9B',skin:'#F3D0B0',shirt:'#FFFFFF',pants:'#F4C2D0',long:1},badge:['상태','회복'],
+  after:'메지 상태가 아주 좋아요! 또 오세요. 💗',
+  pool:NURSE,
+  status:()=>state.stage<2?'wait':undefined,
+  script:()=>{
+   if(state.stage<2)return [{say:'포켓몬 센터에 어서 오세요! 💗'},{say:state.stage===0?'포켓몬이 없네요. 오박사님한테 가 보세요.':'메지 상태가 아주 좋아요! 다치면 오세요.'}];
+   if(state.stage>=3)return null;
+   return [
+    {say:'어머, 메지가 많이 다쳤네요.'},
+    NURSE[0],NURSE[1],
+    {say:'메지를 기계에 넣을게요. 띠리링~ ♪'},
+    NURSE[2],NURSE[3],
+    {say:'메지가 다 회복했어요! 메지 상태가 아주 좋아요. 🐶✨',award:['상태','회복'],set:()=>{state.stage=3}}];
+  }},
+ {id:'mover',name:'인부',x:6,y:15,dir:'down',look:{hair:'#5A3A22',skin:'#D9A47A',shirt:'#E9A23B',pants:'#3A3A48',cap:'#F2C94C'},badge:['들다'],
+  after:'이 집 마음에 들어요? 거의 다 지었어요!',
+  talk:[
+   {say:'휴… 이 벽돌 너무 무거워요.'},
+   {ask:'무거운 가방이 있어요. 손으로 위로 ___.',opts:[['들어요',1],['물어요',0,'😄 이로 잡으면 "물어요". 손으로 위로 → "들어요".'],['지켜요',0,'지키다는 안전하게 해요. 손으로 위로 → "들어요".']]},
+   {ask:'이 게임이 좋아요. 이 게임이 마음에 ___.',opts:[['들어요',1],['따라요',0,'"마음에 들어요"는 "좋아요"라는 뜻이에요. 들다!']]},
+   {ask:'집을 짓는 데 돈이 많이 ___.',opts:[['들어요',1],['물어요',0,'돈은 물지 않아요! 😄 돈이 필요해요 → "돈이 들어요".']]},
+   {ask:'"들다"는 뜻이 하나예요?',opts:[['아니요, 뜻이 많아요.',1],['네, 하나예요.',0,'아니에요! 가방을 들어요, 마음에 들어요, 돈이 들어요… 많아요.']]},
+   {say:'고마워요! 이제 벽돌을 들 수 있어요. 💪',award:['들다']}]},
+ {id:'builder',name:'목수',x:4,y:13,dir:'down',look:{hair:'#3B2A22',skin:'#E8B98F',shirt:'#B5654A',pants:'#3A3A48'},
+  talk:[
+   {say:'저는 목수예요. 집을 지어요. 🔨'},
+   {ask:'집을 만들어요. 집을 ___.',opts:[['지어요',1],['짖어요',0,'😄 짖다는 강아지가 "멍멍!" 해요. 집은 "지어요".']]},
+   {ask:'"짓다"는 집에만 써요?',opts:[['아니요, 밥도, 이름도 지어요.',1],['네, 집에만 써요.',0,'아니에요! 밥을 지어요, 이름을 지어요, 노래도 지어요.']]},
+   {say:'맞아요! 강아지 이름도 지어요. "메지" 좋은 이름이에요!'}]},
+ {id:'owner',name:'뽀삐 주인',x:8,y:11,dir:'right',look:{hair:'#E0C070',skin:'#F1C9A5',shirt:'#E07A5F',pants:'#3D5A80',long:1},badge:['물다'],
+  after:'뽀삐가 공을 물고 달려요! 🐩',
+  talk:[
+   {say:'안녕하세요! 이 강아지는 뽀삐예요. 🐩'},
+   {ask:'뽀삐가 이로 공을 잡아요. 공을 ___.',opts:[['물어요',1],['만져요',0,'"만지다"는 손으로 해요. 이로 잡아요 → "물어요".'],['들어요',0,'손으로 위로 → 들어요. 이로 잡아요 → "물어요".']]},
+   {ask:'여름 밤에 모기가 사람을 ___.',opts:[['물어요',1],['지어요',0,'😄 모기는 집을 안 지어요! 모기가 "물어요".']]},
+   {ask:'뽀삐가 "멍멍!" 해요. 뽀삐가 ___.',opts:[['짖어요',1],['지어요',0,'"지어요"는 집을 만들어요. 멍멍! → "짖어요". 소리는 비슷해요!'],['물어요',0,'물다는 이로 잡아요. 멍멍! → "짖어요".']]},
+   {ask:'뽀삐가 뼈를 ___ 달려요.',opts:[['물고',1],['물어고',0,'"-고"는 그냥 붙여요. 물다 → "물고".']]},
+   {say:'정답! 걱정 마세요. 뽀삐는 사람을 안 물어요. 😊',award:['물다']}]},
+ {id:'poppy',name:'뽀삐',x:9,y:11,dir:'left',still:1,kind:'dog',look:{fur:'#F4F4F4',ear:'#D8C8B4'},
+  talk:[{say:'멍멍! 🐩 (뽀삐가 짖어요.)'}]},
+ {id:'fan1',name:'관중',x:22,y:12,dir:'down',still:1,look:{hair:'#2F2F38',skin:'#DDAE85',shirt:'#5B8BD9',pants:'#333'},
+  talk:[{say:'와! 배틀이다! 저는 관중이에요. 앉아서 구경해요.'}]},
+ {id:'fan2',name:'관중',x:23,y:12,dir:'down',still:1,look:{hair:'#E0C070',skin:'#F3D0B0',shirt:'#D9544B',pants:'#333'},
+  talk:[{say:'라이벌의 공격이 세요. 그래도 메지가 견딜 수 있을 거예요!'}]},
+ ],
+});
+})();
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 4편 · 체육관과 수리점
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   Story: beat the gym leader → badge + a technical machine that turns out to be broken →
+   fill in the repair form → the repairer fixes it → back to the leader for one last chance.
+   state.stage: 0 start · 1 machine broken · 2 form written · 3 repaired · 4 done
+   ===================================================================== */
+(()=>{
+const LEADER=[
+ {w:'배지',ask:'관장을 이기면 받아요. 옷에 다는 작고 예쁜 거예요. 이건 ___예요.',opts:[['배지',1],['머신',0,'머신은 기계예요. 옷에 다는 작은 거 → "배지".'],['기회',0,'기회는 좋은 때예요. 옷에 다는 작은 거 → "배지".']]},
+ {w:'배지',ask:'포켓몬 리그에 가려면 체육관 ___가 여덟 개 있어야 돼요.',opts:[['배지',1],['머신',0,'머신은 기술을 가르쳐요. 리그에 가려면 "배지" 여덟 개!']]},
+ {w:'머신',ask:'"기술 머신"으로 뭐 해요?',opts:[['포켓몬한테 새 기술을 가르쳐요.',1],['포켓몬을 회복해요.',0,'회복은 포켓몬 센터에서 해요. 기술 머신은 새 기술을 가르쳐요.']]},
+ {w:'머신',ask:'"머신"은 영어 machine이에요. 한국어로 하면 ___예요.',opts:[['기계',1],['기술',0,'기술은 하는 방법이에요. machine → "기계".'],['기회',0,'기회는 chance예요. machine → "기계".']]},
+ {w:'기회',ask:'이번이 처음이에요. 다음은 없어요. 처음이자 마지막 ___예요!',opts:[['기회',1],['기계',0,'소리가 비슷해요! 기계는 machine이에요. 좋은 때 → "기회".'],['기술',0,'기술은 하는 방법이에요. 좋은 때 → "기회".']]},
+ {w:'기회',ask:'"처음이자 마지막"은 무슨 뜻이에요?',opts:[['처음이에요. 그리고 다시는 없어요.',1],['처음이에요. 다음에 또 있어요.',0,'"-이자"는 "-이고, 또"예요. 처음이고 또 마지막이에요. 다시는 없어요!']]},
+ {w:'기회',ask:'좋은 기회가 왔어요. 이 기회를 ___ 마세요!',opts:[['놓치지',1],['지키지',0,'기회는 "놓치다"하고 같이 써요. 기회를 놓치지 마세요!']]},
+];
+const DESK=[
+ {w:'작성하다',ask:'종이에 이름하고 전화번호를 써요. 신청서를 ___.',opts:[['작성해요',1],['대체해요',0,'대체하다는 다른 걸로 바꿔요. 서류를 써요 → "작성해요".'],['개명해요',0,'개명은 이름을 바꿔요. 서류를 써요 → "작성해요".']]},
+ {w:'작성하다',ask:'"이것을 다 작성해 주실래요?" 무슨 뜻이에요?',opts:[['이걸 다 써 주세요.',1],['이걸 다 읽어 주세요.',0,'작성하다는 "쓰다"예요. 읽다가 아니에요. "다 써 주세요".']]},
+ {w:'작성하다',ask:'"작성하다"는 보통 뭐하고 같이 써요?',opts:[['신청서, 보고서, 이메일',1],['집, 밥, 이름',0,'그건 "짓다"예요! 서류, 글 → "작성하다".']]},
+];
+const FIX=[
+ {w:'고장 나다',ask:'머신이 안 켜져요. 머신이 ___.',opts:[['고장 났어요',1],['떨어졌어요',0,'떨어지다는 아래로 가요. 기계가 안 돼요 → "고장 났어요".'],['비싸졌어요',0,'비싸지다는 값이 올라가요. 기계가 안 돼요 → "고장 났어요".']]},
+ {w:'고장 나다',ask:'감기에 걸렸어요. 사람한테도 "고장 났어요"라고 해요?',opts:[['아니요, 사람은 "아파요".',1],['네, 사람도 고장 나요.',0,'"고장 나다"는 기계, 물건에 써요. 사람은 "아파요". (농담으로는 써요 😄)']]},
+ {w:'수리하다',ask:'고장 난 컴퓨터를 고쳐요. 컴퓨터를 ___.',opts:[['수리해요',1],['작성해요',0,'작성하다는 글을 써요. 고쳐요 → "수리해요".'],['심어요',0,'😄 컴퓨터는 땅에 안 심어요! 고쳐요 → "수리해요".']]},
+ {w:'수리하다',ask:'"수리하다"하고 뜻이 비슷한 말은?',opts:[['고치다',1],['짓다',0,'짓다는 새로 만들어요. 고장 난 걸 다시 되게 해요 → "고치다".']]},
+ {w:'대체하다',ask:'헌 부품 대신 새 부품을 써요. 헌 부품을 새 부품으로 ___.',opts:[['대체해요',1],['개선해요',0,'개선하다는 더 좋게 해요. 다른 걸로 바꿔요 → "대체해요".'],['개명해요',0,'개명은 이름만 바꿔요! 부품을 바꿔요 → "대체해요".']]},
+ {w:'대체하다',ask:'"교실에서 선생님을 컴퓨터로 대체할 수 없어요." 무슨 뜻이에요?',opts:[['컴퓨터가 선생님 대신 할 수 없어요.',1],['컴퓨터가 선생님을 도와줄 수 없어요.',0,'대체하다는 "대신하다"예요. 컴퓨터는 선생님 "대신" 못 해요.']]},
+];
+const go=n=>()=>{state.stage=n};
+
+CARTRIDGES.push({
+ id:'c4', n:'4편', title:'체육관과 수리점', color:'#8E7CC3', save:'daneo-maul-v4',
+ words:[['배지','badge'],['머신','machine (TM)'],['기회','chance'],['작성하다','to write up'],['고장 나다','to break down'],['수리하다','to repair'],['대체하다','to replace'],['짓다','to build'],['심다','to plant'],['비싸지다','to get pricier'],['두다','to put, leave'],['개명하다',"to change one's name"]],
+ start:{x:12,y:9,dir:'down'},
+ fresh:{stage:0},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['<b>기회</b>: 좋은 때 (chance) · <b>기계</b>: machine · <b>기술</b>: 하는 방법','집을 <b>지어요</b> · 나무를 <b>심어요</b> · 강아지가 <b>짖어요</b>','탁자에 <b>둬요</b> = 탁자에 <b>놓아요</b> · 주머니에 <b>넣어요</b>','<b>고장 나다</b>: 기계, 물건 · <b>아프다</b>: 사람','<b>대체하다</b>: 다른 걸로 바꿔요 · <b>개선하다</b>: 더 좋게 해요','-아/어<b>지다</b>: 비싸<b>졌어요</b>, 추워<b>졌어요</b> (변했어요)','<b>개명</b>(改名): 이름을 바꿔요 · <b>작성</b>: 서류를 써요'],
+ intro:['단어 마을 4편! 오늘은 체육관과 수리점이에요. 🏟️🔧','관장을 이기면 배지를 받아요. 먼저 체육관에 가 보세요.','! 가 있는 사람한테 배지가 있어요. 한 번에 다 맞히면 ★ 예요.'],
+ done:['축하해요! 배지 열두 개를 다 모았어요! 🎉','배지, 머신, 기회, 작성하다, 고장 나다, 수리하다, 대체하다, 짓다, 심다, 비싸지다, 두다, 개명하다!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열두 개! 모든 단어가 완벽해요!','처음이자 마지막 기회…? 아니에요, 또 놀러 오세요! 😄'],
+
+ quest(){
+  if(state.stage===0)return {text:'🏟️ 체육관에 가서 관장을 만나 보세요.'};
+  if(state.stage===1)return {late:true,text:'🔧 머신이 고장 났어요! 수리점에서 신청서를 작성해요.'};
+  if(state.stage===2)return {text:'🔧 수리 기사님한테 머신을 보여 주세요.'};
+  if(state.stage===3)return {text:'🏟️ 머신을 고쳤어요! 관장한테 다시 가요. 마지막 기회예요!'};
+  return null;
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'Y':{tile:'gymWall'},'g':{tile:'gymFloor',walk:1},'S':{tile:'shopWall'},'q':{tile:'floor',walk:1},'_':{tile:'sand',walk:1},
+  'k':{tile:'shelf'},'w':{tile:'workbench'},'c':{tile:'counter',over:1},'H':{tile:'brick'},'d':{tile:'dirt'},'y':{tile:'sapling'},
+  'a':{tile:'tableOut'},'f':{tile:'frame'},'#':{tile:'bricks'},'~':{tile:'pond'},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.YYYYYYYYY...SSSSSSSSS..T",
+"T.YgggggggY...SkkqqqwwS..T",
+"T.YgggggggY...SqqqqqqqS..T",
+"T.YgggggggY...SqcccccqS..T",
+"T.YgggggggY...SqqqqqqqS..T",
+"T.YYYYgYYYY...SSSSqSSSS..T",
+"T...p.,...p.......,.p....T",
+"T.....,,,,,,,,,,,,,......T",
+"T.....,...~~~~....,......T",
+"T.....,...~~~~....,......T",
+"T.....,,,,,,,,,,,,,..p...T",
+"T.______..ddddd....HHHHH.T",
+"T._ff_#_..dydyd....HHHHH.T",
+"T._ff___..ddddd....HHHHH.T",
+"T.______.........a.......T",
+"T........................T",
+"T........................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '10,8':['표지판','단어 마을 4편 · 배지 열두 개를 모아요!'],
+ '4,8':['표지판','체육관 · 관장을 이기면 배지를 받아요! 🏅'],
+ '20,8':['표지판','수리점 · 고장 난 물건, 다 수리해요! 🔧'],
+ '21,12':['표지판','곡선 길 · …그런데 이 길은 곡선이 아니에요. 직선이에요! 😄'],
+ },
+ things:{
+ T:sayAt(...TREES),
+ Y:sayAt('체육관 벽이에요. 안에서 "가라!" 소리가 들려요. 🏟️','체육관이 아주 커요. 문은 아래쪽에 있어요.','강한 트레이너가 안에 있어요. 두근두근!'),
+ S:sayAt('가게 벽이에요. 안에서 뚝딱뚝딱 소리가 나요. 🔨','창문 안에 망치하고 드라이버가 보여요.','가게 문은 아래쪽에 있어요.'),
+ k:()=>[{say:'부품이 많아요. 🔩 나사, 전선, 배터리…'}],
+ w:()=>[{say:state.stage>=3?'작업대예요. 헌 부품이 있어요. 새 부품으로 대체했어요.':'작업대예요. 망치하고 드라이버가 있어요. 🔧'}],
+ c:()=>[{say:'수리점 카운터예요. 신청서가 있어요. 📝'}],
+ f:()=>[{say:'목수 아저씨가 나무로 집을 짓고 있어요. 🔨'}],
+ '#':()=>[{say:'벽돌이에요. 집을 지을 때 써요. 🧱'}],
+ '~':sayAt('연못이에요. 정원사 아저씨가 여기 물로 나무에 물을 줘요. 🌱💧','연못에 동전이 많아요. 다들 "관장을 이기게 해 주세요!" 빌었어요. 🪙'),
+ d:()=>[{say:'흙이에요. 여기에 나무를 심어요. 🌱'}],
+ y:()=>[{say:'작은 나무예요. 정원사 아저씨가 어제 심었어요. 🌳'}],
+ H:()=>[{say:'새 집이에요. 집값이 얼마예요? 🏠'}],
+ a:()=>[{say:has('두다')?'탁자예요. 열쇠는 이제 수아 씨 주머니에 있어요.':'탁자 위에 열쇠가 있어요! 🔑 누가 여기에 뒀어요?'}],
+ },
+
+ npcs:[
+ {id:'leader',name:'관장',x:6,y:3,dir:'down',look:{hair:'#2B1E1A',skin:'#E8B98F',shirt:'#8E7CC3',pants:'#2E3548',belt:'#F2C94C'},badge:['배지','머신','기회'],
+  after:'또 왔어요? 배틀은 언제든지 좋아요! 💪',
+  pool:LEADER,
+  status:()=>state.stage===1||state.stage===2?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [
+    {say:'체육관에 온 걸 환영해요! 저는 관장이에요. 🏟️'},
+    LEADER[0],LEADER[1],
+    {say:'좋아요, 배틀해요! … 와, 정말 강하네요. 제가 졌어요!'},
+    {say:'이 배지를 받으세요. 🏅',award:['배지']},
+    LEADER[2],LEADER[3],
+    {say:'그리고 이 기술 머신도 줄게요. 💿',award:['머신']},
+    {say:'어? 이상해요. 머신이 안 켜져요… 고장 났나 봐요!',set:go(1)},
+    {say:'수리점에 가서 고쳐 오세요. 그럼 한 번 더 기회를 줄게요.'}];
+   if(state.stage<3)return [{say:'머신은 아직이에요? 수리점은 길 건너편에 있어요. 🔧'}];
+   if(state.stage===3)return [
+    {say:'머신을 고쳤네요! 잘했어요.'},
+    {say:'그런데 조심하세요. 이 머신은 한 번만 쓸 수 있어요.'},
+    LEADER[4],LEADER[5],LEADER[6],
+    {say:'좋아요! … 띠리링~ ♪ 포켓몬이 새 기술을 배웠어요! ✨',award:['기회'],set:go(4)},
+    {say:'이제 당신은 진짜 트레이너예요!'}];
+   return null;
+  }},
+ {id:'trainer',name:'트레이너',x:4,y:5,dir:'right',look:{hair:'#E0C070',skin:'#F1C9A5',shirt:'#3FA86B',pants:'#2E3548',cap:'#3FA86B'},
+  talk:[{say:'관장님은 정말 강해요.'},{say:'저는 처음이자 마지막 기회를 놓쳤어요… 😢'}]},
+ {id:'desk',name:'접수원',x:17,y:4,dir:'down',still:1,look:{hair:'#3B2A22',skin:'#F3D0B0',shirt:'#5BB5A8',pants:'#2E3548',long:1},badge:['작성하다'],
+  after:'신청서는 잘 받았어요. 감사합니다! 📝',
+  pool:DESK,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [{say:'수리점이에요. 고장 난 물건이 있으면 오세요. 🔧'}];
+   if(state.stage>=2)return null;
+   return [
+    {say:'어서 오세요! 수리를 맡기려면 신청서를 써야 돼요.'},
+    DESK[0],DESK[1],DESK[2],
+    {say:'감사합니다! 이제 기사님한테 머신을 보여 주세요.',award:['작성하다'],set:go(2)}];
+  }},
+ {id:'fixer',name:'수리 기사',x:21,y:4,dir:'left',look:{hair:'#5A3A22',skin:'#D9A47A',shirt:'#4F7BD6',pants:'#3A3A48',cap:'#E9A23B'},badge:['고장 나다','수리하다','대체하다'],
+  after:'고장 나면 또 오세요. 다 수리해 줄게요! 🔧',
+  pool:FIX,
+  status:()=>state.stage<2?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [{say:'저는 수리 기사예요. 고장 난 거 있어요? 다 고칠 수 있어요! 🔧'}];
+   if(state.stage===1)return [{say:'먼저 접수원한테 가서 신청서를 작성해 주세요.'}];
+   if(state.stage>=3)return null;
+   return [
+    {say:'머신 좀 볼게요… 음.'},
+    FIX[0],FIX[1],FIX[2],FIX[3],
+    {say:'안에 있는 부품이 너무 낡았어요.'},
+    FIX[4],FIX[5],
+    {say:'다 고쳤어요! 머신이 잘 켜져요. 💿✨',award:['고장 나다','수리하다','대체하다'],set:go(3)},
+    {say:'관장님한테 다시 가 보세요!'}];
+  }},
+ {id:'carpenter',name:'목수',x:4,y:13,dir:'down',look:{hair:'#3B2A22',skin:'#E8B98F',shirt:'#B5654A',pants:'#3A3A48'},badge:['짓다'],
+  after:'다음 달에 이 집을 다 지을 거예요! 🏠',
+  talk:[
+   {say:'저는 목수예요. 나무로 집을 지어요. 🔨'},
+   {ask:'나무로 집을 만들어요. 집을 ___.',opts:[['지어요',1],['짖어요',0,'😄 짖다는 강아지가 "멍멍!" 해요. 집은 "지어요".'],['심어요',0,'나무는 심어요. 집은 "지어요".']]},
+   {ask:'짓다 → 지어요. 그럼 어제는? "저는 집을 나무로 ___."',opts:[['지었어요',1],['짓었어요',0,'짓다는 ㅅ이 빠져요. 지어요 → "지었어요".']]},
+   {ask:'"이름을 지어요"는 무슨 뜻이에요?',opts:[['새 이름을 만들어요.',1],['이름을 종이에 써요.',0,'종이에 쓰면 "이름을 써요". 새 이름을 만들어요 → "이름을 지어요".']]},
+   {say:'맞아요! 집도, 밥도, 이름도 지어요.',award:['짓다']}]},
+ {id:'gardener',name:'정원사',x:12,y:16,dir:'up',look:{hair:'#6B6B70',skin:'#E3B48C',shirt:'#6FBF5A',pants:'#6B4A2B',cap:'#E9D8A6'},badge:['심다'],
+  after:'나무가 쑥쑥 자라요. 🌳',
+  talk:[
+   {say:'안녕하세요! 저는 정원사예요. 🌱'},
+   {ask:'땅에 작은 나무를 넣고 흙을 덮어요. 나무를 ___.',opts:[['심어요',1],['지어요',0,'지어요는 집! 땅에 나무 → "심어요".'],['넣어요',0,'비슷해요! 그런데 땅에 나무나 꽃은 "심어요".']]},
+   {ask:'봄이에요. 꽃씨를 ___.',opts:[['심어요',1],['놓아요',0,'놓다는 위에 둬요. 씨는 땅 안에 → "심어요".']]},
+   {ask:'심다 → 심어요. 어제는? "어제 나무를 ___."',opts:[['심었어요',1],['심았어요',0,'ㅣ 다음에는 "-었어요". 심었어요!']]},
+   {say:'잘했어요! 이 나무들은 제가 어제 심었어요.',award:['심다']}]},
+ {id:'agent',name:'중개인',x:21,y:16,dir:'down',look:{hair:'#1E1E24',skin:'#F1C9A5',shirt:'#E07A5F',pants:'#3D5A80',long:1},badge:['비싸지다'],
+  after:'집 사실 거예요? 요즘 정말 비싸요… 💸',
+  talk:[
+   {say:'저는 부동산 중개인이에요. 집을 팔아요. 🏠'},
+   {ask:'작년 집값은 1억. 올해는 2억. 집값이 ___.',opts:[['비싸졌어요',1],['비쌌어요',0,'"비쌌어요"는 그냥 비쌌어요. 값이 변했어요 → "비싸졌어요".'],['싸졌어요',0,'싸지다는 값이 내려가요. 1억 → 2억, 올라갔어요 → "비싸졌어요".']]},
+   {ask:'"집값이 비싸지고 있어요." 무슨 뜻이에요?',opts:[['집값이 점점 올라가요.',1],['집값이 점점 내려가요.',0,'비싸지다는 더 비싸게 돼요. 점점 "올라가요".']]},
+   {ask:'-아/어지다는 "변해요". 날씨가 어제보다 ___.',opts:[['추워졌어요',1],['춥어졌어요',0,'춥다 → 추워요 → "추워졌어요". ㅂ이 ㅜ로 바뀌어요!']]},
+   {ask:'"집값"은 무슨 뜻이에요?',opts:[['집의 가격',1],['집의 크기',0,'값은 가격, 돈이에요. 집값은 집의 "가격"이에요.']]},
+   {say:'맞아요! 요즘 집값이 너무 비싸졌어요. 😥',award:['비싸지다']}]},
+ {id:'sua',name:'수아',x:16,y:16,dir:'right',look:{hair:'#C0582E',skin:'#F3D0B0',shirt:'#F2C94C',pants:'#3A3F55',long:1},badge:['두다'],
+  after:'이제 열쇠는 꼭 주머니에 넣어 둘 거예요. 🔑',
+  talk:[
+   {say:'어떡해요! 열쇠가 없어요. 🔑'},
+   {ask:'밖에 나가기 전에 열쇠를 탁자에 ___.',opts:[['뒀어요',1],['넣었어요',0,'넣다는 안에! 탁자 위 → "뒀어요".'],['심었어요',0,'😄 열쇠는 안 심어요! 탁자 위 → "뒀어요".']]},
+   {ask:'두다 → 두어요. 짧게 하면?',opts:[['둬요',1],['둬어요',0,'두 + 어요 = "둬요". 어제는? "뒀어요".']]},
+   {ask:'"두다"하고 뜻이 비슷한 말은?',opts:[['놓다',1],['들다',0,'들다는 위로 올려요. 비슷한 말은 "놓다". 탁자에 놓아요 = 탁자에 둬요.']]},
+   {ask:'"그냥 두세요." 무슨 뜻이에요?',opts:[['만지지 마세요. 그대로 있게 하세요.',1],['빨리 가져가세요.',0,'"그냥 두다"는 안 바꾸고, 안 만져요. 그대로!']]},
+   {say:'아, 생각났어요! 탁자에 뒀어요. 저기 있네요! 고마워요.',award:['두다']}]},
+ {id:'jiho',name:'지호',x:8,y:11,dir:'right',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#5B8BD9',pants:'#4A4F6A'},badge:['개명하다'],
+  after:'"지호"라는 이름, 마음에 들어요! 😊',
+  talk:[
+   {say:'안녕하세요! 저는 지호예요. 😊'},
+   {say:'원래 제 이름은 철수였어요. 작년에 이름을 바꿨어요.'},
+   {ask:'이름을 공식적으로 바꿔요. 이름을 ___.',opts:[['개명해요',1],['개선해요',0,'개선은 더 좋게 해요. 이름을 바꿔요 → "개명해요".'],['작성해요',0,'작성은 서류를 써요. 이름을 바꿔요 → "개명해요".']]},
+   {ask:'개명(改名): 改는 "바꾸다". 그럼 名은 뭐예요?',opts:[['이름',1],['사람',0,'名은 "이름 명"이에요. 유명(有名)한 사람은 이름이 알려진 사람!']]},
+   {ask:'제 동생도 개명했어요. 동생은 누구예요?',opts:[['저보다 어린 형제예요.',1],['저보다 나이 많은 형이에요.',0,'나이가 많으면 형, 오빠, 누나, 언니. 어리면 "동생"이에요.']]},
+   {say:'맞아요! 저 사람은 제 동생이에요. 동생도 개명했어요.',award:['개명하다']}]},
+ {id:'sibling',name:'지호 동생',x:9,y:11,dir:'left',still:1,look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#F26D6D',pants:'#4A4F6A',long:1},
+  talk:[{say:'저는 지호 동생이에요. 원래 이름은 영희였어요.'},{say:'지금은 "하은"이에요. 예쁘죠? 😊'}]},
+ ],
+});
+})();
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 5편 · 파고 뉴스
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   Story: you are the TV station's new reporter. Interview six people about this week's real Fargo news
+   (Oct 6 2026 special election, Carol Widman's Candy changing hands, new south Fargo Chick-fil-A opening Oct 8,
+   library "Northern Focus 2026" photo exhibit, police street-racing crackdown), then go back and broadcast.
+   state.stage: 0 start · 1 reporter (interviewing) · 2 stand on the ✕ in front of the camera · 3 broadcast done
+   ===================================================================== */
+(()=>{
+const SOURCES=['official','voterA','candy','chicken','librarian','police'];
+const done=()=>NPCS.filter(n=>SOURCES.includes(n.id)&&n.badge.every(has)).length;
+const go=n=>()=>{state.stage=n};
+const EDIT=[
+ {w:'기자',ask:'뉴스를 취재하고 기사를 쓰는 사람은 ___예요.',opts:[['기자',1],['관중',0,'관중은 보는 사람이에요. 뉴스를 쓰는 사람 → "기자".'],['관장',0,'관장은 체육관 대장이에요. 뉴스를 쓰는 사람 → "기자".']]},
+ {w:'기자',ask:'기자는 어떤 질문을 많이 해요?',opts:[['누가, 언제, 어디서, 무엇을, 왜, 어떻게?',1],['배고파요? 졸려요?',0,'😄 그건 친구 질문이에요. 기자는 "누가, 언제, 어디서, 무엇을, 왜, 어떻게?"']]},
+ {w:'보도하다',ask:'뉴스로 사람들한테 소식을 알려요. 뉴스를 ___.',opts:[['보도해요',1],['단속해요',0,'단속은 경찰이 해요. 뉴스로 알려요 → "보도해요".'],['은퇴해요',0,'은퇴는 일을 그만둬요. 뉴스로 알려요 → "보도해요".']]},
+ {w:'보도하다',ask:'"보도"는 뜻이 두 개예요. 뉴스(報道), 그리고 사람이 걷는 길(步道). "보도로 걸어요"는?',opts:[['길로 걸어요.',1],['뉴스로 걸어요.',0,'😄 뉴스 위로는 못 걸어요! 걷는 "보도"는 사람이 다니는 길이에요.']]},
+];
+const VOTE=[
+ {w:'선거',ask:'사람들이 대표를 뽑거나 중요한 일을 정해요. 그건 ___예요.',opts:[['선거',1],['시합',0,'시합은 운동으로 겨뤄요. 대표를 뽑아요 → "선거".'],['전시회',0,'전시회는 그림이나 사진을 봐요. 대표를 뽑아요 → "선거".']]},
+ {w:'투표하다',ask:'종이에 찬성이나 반대를 표시해서 넣어요. 사람들이 ___.',opts:[['투표해요',1],['보도해요',0,'보도는 뉴스로 알려요. 종이에 표시해서 넣어요 → "투표해요".'],['개업해요',0,'개업은 가게를 새로 열어요. 종이에 표시해서 넣어요 → "투표해요".']]},
+ {w:'투표하다',ask:'투표는 어디서 해요?',opts:[['파고돔, 시민 센터, 교회 한 곳',1],['사탕 가게',0,'😄 사탕 가게에서는 초콜릿을 사요. 투표는 파고돔, 시민 센터, 교회 한 곳이에요.']]},
+ {w:'선거',ask:'선거 날 투표 시간은 언제예요?',opts:[['아침 7시부터 저녁 7시까지',1],['밤 12시부터 아침 7시까지',0,'밤에는 다 자요! 아침 7시부터 저녁 7시까지예요.']]},
+];
+const VOTER=[
+ {w:'찬성하다',ask:'어떤 생각이 좋아서 "네, 그렇게 해요!" 해요. 그 생각에 ___.',opts:[['찬성해요',1],['반대해요',0,'반대는 "아니요!"예요. "네!" → "찬성해요".']]},
+ {w:'찬성하다',ask:'"찬성"의 반대말은 뭐예요?',opts:[['반대',1],['무료',0,'무료는 돈을 안 내요. 찬성 ↔ "반대".']]},
+ {w:'찬성하다',ask:'저는 찬성해요. 저 사람은 반대해요. 우리 생각이 ___.',opts:[['달라요',1],['같아요',0,'찬성 하나, 반대 하나. 생각이 "달라요".']]},
+];
+const CANDY=[
+ {w:'은퇴하다',ask:'오래 일했어요. 이제 일을 그만두고 쉬어요. ___.',opts:[['은퇴해요',1],['개업해요',0,'개업은 가게를 새로 열어요. 일을 그만둬요 → "은퇴해요".'],['투표해요',0,'투표는 선거에서 해요. 일을 그만둬요 → "은퇴해요".']]},
+ {w:'물려받다',ask:'고모의 가게를 이제 제가 받아서 해요. 가게를 ___.',opts:[['물려받아요',1],['빌려요',0,'빌리면 다시 돌려줘야 돼요! 계속 제 가게 → "물려받아요".']]},
+ {w:'물려받다',ask:'"물려받다"의 반대말은 뭐예요?',opts:[['물려주다',1],['돌려주다',0,'돌려주다는 빌린 걸 다시 줘요. 물려받다 ↔ "물려주다".']]},
+ {w:'물려받다',ask:'이 가게의 "치퍼"는 뭐예요?',opts:[['초콜릿을 입힌 감자칩',1],['초콜릿 아이스크림',0,'아이스크림이 아니에요! 감자칩에 초콜릿을 하나씩 입혀요.']]},
+];
+const SHOP=[
+ {w:'개업하다',ask:'새 가게가 처음으로 문을 열어요. 가게가 ___.',opts:[['개업해요',1],['은퇴해요',0,'은퇴는 사람이 일을 그만둬요. 새 가게가 문을 열어요 → "개업해요".'],['반납해요',0,'반납은 도서관에 책을 돌려줘요. 새 가게가 문을 열어요 → "개업해요".']]},
+ {w:'개업하다',ask:'이 가게는 언제 개업해요?',opts:[['10월 8일 목요일 아침',1],['10월 6일 화요일',0,'10월 6일은 선거 날이에요! 개업은 10월 8일 목요일이에요.']]},
+ {w:'일자리',ask:'이 가게에서 사람 100명쯤 일해요. ___가 100개쯤 생겨요.',opts:[['일자리',1],['전시회',0,'전시회는 사진이나 그림을 봐요. 일하는 자리 → "일자리".'],['선거',0,'선거는 대표를 뽑아요. 일하는 자리 → "일자리".']]},
+ {w:'일자리',ask:'"일자리를 찾아요"는 무슨 뜻이에요?',opts:[['일할 곳을 찾아요.',1],['앉을 의자를 찾아요.',0,'"자리"는 의자 뜻도 있어요. 그런데 "일자리"는 일할 곳이에요.']]},
+];
+const LIB=[
+ {w:'전시회',ask:'사진이나 그림을 걸어 놓아요. 사람들이 보러 와요. 그건 ___예요.',opts:[['전시회',1],['선거',0,'선거는 대표를 뽑아요. 사진을 걸어 놓아요 → "전시회".'],['일자리',0,'일자리는 일하는 곳이에요. 사진을 걸어 놓아요 → "전시회".']]},
+ {w:'전시회',ask:'사진 전시회는 언제까지예요?',opts:[['10월 31일까지',1],['10월 6일까지',0,'10월 6일은 선거 날이에요. 전시회는 10월 31일까지예요.']]},
+ {w:'무료',ask:'돈을 안 내도 돼요. 그건 ___예요.',opts:[['무료',1],['유료',0,'유료는 돈을 내요. 돈을 안 내요 → "무료".'],['일자리',0,'일자리는 돈을 받는 일이에요! 돈을 안 내요 → "무료".']]},
+ {w:'무료',ask:'"무료"의 반대말은 뭐예요?',opts:[['유료',1],['찬성',0,'찬성 ↔ 반대. 무료 ↔ "유료".']]},
+];
+const COP=[
+ {w:'단속하다',ask:'경찰이 규칙을 안 지키는 사람을 찾아서 막아요. 경찰이 ___.',opts:[['단속해요',1],['보도해요',0,'보도는 기자가 해요. 규칙을 안 지키는 사람을 막아요 → "단속해요".'],['은퇴해요',0,'은퇴는 일을 그만둬요. 막아요 → "단속해요".']]},
+ {w:'단속하다',ask:'"과속 단속"은 무슨 뜻이에요?',opts:[['너무 빨리 달리는 차를 단속해요.',1],['너무 천천히 걷는 사람을 단속해요.',0,'과속은 "너무 빠른 속도"예요. 빨리 달리는 차를 단속해요.']]},
+ {w:'단속하다',ask:'경찰은 번호판을 읽는 카메라도 써요. 번호판은 어디에 있어요?',opts:[['차 앞하고 뒤',1],['사람 머리 위',0,'😄 번호판은 차에 있어요. 차 앞하고 뒤!']]},
+];
+
+CARTRIDGES.push({
+ id:'c5', n:'5편', title:'파고 뉴스', color:'#D9544B', save:'daneo-maul-v5',
+ sources:[['10월 6일 파고 특별 선거: 시 정부를 바꿀까요?','https://fargond.gov/city-government/departments/auditors/licensing-department/elections/2026-city-of-fargo-special-election','City of Fargo'],
+  ['파고 시민들이 시 정부 개편을 투표로 정해요','https://www.valleynewslive.com/2026/09/21/fargo-voters-decide-whether-overhaul-city-government/','Valley News Live'],
+  ['캐럴 위드먼 은퇴, 조카가 사탕 가게를 물려받아요','https://www.kvrr.com/news/local/carol-widman-retires-nephew-takes-over-fargos-family-candy-business/article_58db83a7-929c-46a8-87b8-8bb91848899b.html','KVRR'],
+  ['남쪽 파고 새 칙필레, 10월 8일 개업 · 소 옷 이벤트','https://www.valleynewslive.com/2026/10/01/new-fargo-chick-fil-a-hosting-opening-day-moove-in-party/','Valley News Live'],
+  ['도서관 사진 전시회 「노던 포커스 2026」','https://fargond.gov/city-government/departments/library/teens/northern-narratives-northern-focus','Fargo Public Library'],
+  ['파고 경찰, 도로 경주 단속을 늘려요','https://kfgo.com/2026/09/21/fargo-police-ramp-up-enforcement-against-street-racing-and-dangerous-driving/','KFGO']],
+ words:[['기자','reporter'],['보도하다','to report (news)'],['선거','election'],['투표하다','to vote'],['찬성하다','to be in favor'],['은퇴하다','to retire'],['물려받다','to take over, inherit'],['개업하다','to open (a business)'],['일자리','job'],['전시회','exhibition'],['무료','free (no cost)'],['단속하다','to crack down']],
+ start:{x:10,y:8,dir:'down'},
+ fresh:{stage:0},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['<b>기자</b>가 취재해요 → 뉴스로 <b>보도해요</b>','<b>찬성</b> ↔ <b>반대</b> · <b>무료</b> ↔ <b>유료</b>','<b>개업하다</b>: 가게를 새로 열어요 · <b>은퇴하다</b>: 일을 그만둬요','<b>물려받다</b> ↔ <b>물려주다</b> · 빌리다 ↔ 돌려주다','<b>보도</b>(報道): 뉴스 · <b>보도</b>(步道): 걷는 길','선거에서 <b>투표해요</b> · 경찰이 과속을 <b>단속해요</b>'],
+ intro:['단어 마을 5편! 오늘은 진짜 파고 뉴스예요. 📰','당신은 파고 방송국의 새 기자예요. 먼저 방송국에 가 보세요.','! 가 있는 사람한테 배지가 있어요. 한 번에 다 맞히면 ★ 예요.'],
+ done:['축하해요! 배지 열두 개를 다 모았어요! 🎉','기자, 보도하다, 선거, 투표하다, 찬성하다, 은퇴하다, 물려받다, 개업하다, 일자리, 전시회, 무료, 단속하다!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열두 개! 모든 단어가 완벽해요!','지금까지 파고 뉴스였습니다. 감사합니다! 📺'],
+
+ quest(){
+  if(state.stage===0)return {text:'📺 파고 방송국에 가서 편집장을 만나요.'};
+  if(state.stage===1){const n=done();return n<SOURCES.length?{text:`🎤 마을 사람들을 취재해요! ${n}/${SOURCES.length}`}:{late:true,text:'📺 취재 끝! 방송국에 가서 편집장한테 말해요.'}}
+  if(state.stage===2)return {late:true,text:'🎥 카메라 앞 ✕ 표시에 서세요. 방송 시작!'};
+  return null;
+ },
+ /* the broadcast starts when you step onto the ✕ in front of the camera */
+ onStep(){
+  if(state.stage!==2||player.x!==7||player.y!==4)return;
+  held=null;player.dir='left';
+  openDialog('감독',[
+   {say:'기자님, 준비됐어요? 카메라를 보세요! 🎥'},
+   EDIT[2],EDIT[3],
+   {say:'좋아요! 셋, 둘, 하나… 큐! 🔴',award:['보도하다']},
+   {who:'당신',say:'안녕하십니까, 파고 뉴스입니다. 이번 주 소식을 전해 드립니다.'},
+   {who:'당신',say:'10월 6일, 파고에서 특별 선거가 있습니다. 시 정부를 바꿀지 투표합니다.'},
+   {who:'당신',say:'캐럴 위드먼 사탕 가게는 조카가 물려받았습니다. 치퍼 맛은 그대로입니다.'},
+   {who:'당신',say:'10월 8일, 남쪽 파고에 새 치킨 가게가 개업합니다. 일자리가 100개쯤 생깁니다.'},
+   {who:'당신',say:'지금까지 파고 뉴스였습니다. 감사합니다!',set:go(3)},
+   {who:'편집장',say:'완벽해요! 진짜 기자 같아요. 👏'}]);
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'N':{tile:'stationWall'},'=':{tile:'wood',walk:1},'e':{tile:'desk',over:1},'m':{tile:'tvcam'},'x':{tile:'mark',walk:1},
+  'O':{tile:'domeWall'},'v':{tile:'domeDoor'},'C':{tile:'candyWall'},'K':{tile:'chickenWall'},'L':{tile:'libWall'},
+  '~':{tile:'pond'},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.NNNNNNNN....OOOOOOOOO..T",
+"T.N======N....OOOOOOOOO..T",
+"T.N=e=mx=N....OOOOOOOOO..T",
+"T.N======N....OOOOOOOOO..T",
+"T.NNN=NNNN....OOOOvOOOO..T",
+"T....,.p...p....p........T",
+"T....,,,,,,,,,,,,,,,,,,..T",
+"T........~~~~~...........T",
+"T..**....~~~~~.......**..T",
+"T....,,,,,,,,,,,,,,,,,,..T",
+"T.CCCCC...KKKKKK..LLLLLL.T",
+"T.CCCCC...KKKKKK..LLLLLL.T",
+"T.CCCCC...KKKKKK..LLLLLL.T",
+"T........................T",
+"T..**................**..T",
+"T........................T",
+"T........................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '11,7':['표지판','단어 마을 5편 · 파고 뉴스! 배지 열두 개를 모아요.'],
+ '7,7':['표지판','파고 방송국 · 오늘의 파고 뉴스 📺'],
+ '16,7':['표지판','파고돔 · 10월 6일 특별 선거 투표소 🗳️'],
+ },
+ things:{
+ T:sayAt(...TREES),
+ e:()=>[{say:'편집장 책상이에요. 오늘 뉴스 원고가 있어요. 📝'}],
+ m:()=>[{say:state.stage===2?'카메라 앞 ✕ 표시에 서세요! 🎥':'방송 카메라예요. 🎥 뉴스를 보도할 때 써요.'}],
+ N:()=>[{say:'파고 방송국이에요. 📺'}],
+ O:()=>[{say:'파고돔이에요. 10월 6일에 여기서 투표해요. 🗳️'}],
+ v:()=>[{say:'파고돔 문이에요. 선거 날 아침 7시에 열어요.'}],
+ C:()=>[{say:'캐럴 위드먼 사탕 가게예요. 🍫 초콜릿 냄새가 나요!'}],
+ K:()=>[{say:'새 치킨 가게예요. 10월 8일에 개업해요! 🐔'}],
+ L:()=>[{say:'도서관이에요. 사진 전시회를 해요. 📷'}],
+ '~':sayAt('연못이에요. 레드강은 아니에요. 😄','레드강보다 아주 작아요. 봄에 홍수 걱정은 없어요! 🌊'),
+ '*':()=>[{say:'꽃 위에 벌레가 많아요. 🐞 가을이 오니까 벌레들도 바빠요.'}],
+ },
+
+ npcs:[
+ {id:'editor',name:'편집장',x:4,y:3,dir:'down',still:1,look:{hair:'#6B6B70',skin:'#F1C9A5',shirt:'#3D5A80',pants:'#2E3548'},badge:['기자','보도하다'],
+  after:'좋은 기사 고마워요. 다음 뉴스도 부탁해요! 📰',
+  pool:EDIT,
+  status:()=>(state.stage===1&&done()<SOURCES.length)||state.stage===2?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [
+    {say:'어서 와요! 여기는 파고 방송국이에요. 📺'},
+    {say:'오늘부터 당신은 우리 방송국 기자예요!'},
+    EDIT[0],EDIT[1],
+    {say:'좋아요! 기자증을 받으세요. 🪪',award:['기자'],set:go(1)},
+    {say:'이번 주 파고 뉴스가 많아요. 마을 사람들을 취재해 오세요!'},
+    {say:'선거 관리원, 주민, 사탕 가게, 치킨 가게, 도서관, 경찰. 여섯 명이에요.'}];
+   if(state.stage===1&&done()<SOURCES.length)return [{say:`아직 취재 중이에요? 지금 ${done()}명 했어요. 여섯 명 다 만나 보세요!`}];
+   if(state.stage===1)return [
+    {say:'다 취재했어요? 수고했어요!'},
+    {say:'이제 뉴스를 보도할 시간이에요. 카메라 앞 ✕ 표시에 서세요! 🎥',set:go(2)}];
+   if(state.stage===2)return [{say:'카메라 앞 ✕ 표시에 서세요! 방송 시작해요. 🎥'}];
+   return null;
+  }},
+ {id:'anchor',name:'앵커',x:7,y:3,dir:'down',look:{hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#D9544B',pants:'#2E3548',long:1},
+  talk:[{say:'저는 앵커예요. 카메라 앞에서 뉴스를 읽어요. 🎙️'},{say:'기자가 취재하고, 저는 보도해요. 우리는 한 팀이에요!'}]},
+ {id:'official',name:'선거 관리원',x:18,y:7,dir:'down',look:{hair:'#1E1E24',skin:'#E3B48C',shirt:'#5B8BD9',pants:'#2E3548'},badge:['선거','투표하다'],
+  after:'10월 6일에 투표하세요! 신분증 꼭 가져오세요. 🗳️',
+  pool:VOTE,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [{say:'안녕하세요! 기자예요? 아니에요? 그럼 방송국에 먼저 가 보세요.'}];
+   return null;
+  },
+  talk:[
+   {say:'안녕하세요, 기자님! 저는 선거 관리원이에요. 🗳️'},
+   {say:'10월 6일 화요일에 파고에서 특별 선거가 있어요.'},
+   VOTE[0],
+   {say:'이번 선거는 시 정부를 바꿀지 정해요.'},
+   {say:'지금은 위원 다섯 명이 시를 이끌어요. 바뀌면 여섯 구에서 의원을 한 명씩 뽑아요. 시장은 시민 모두가 뽑아요.'},
+   VOTE[1],VOTE[2],VOTE[3],
+   {say:'투표하려면 파고에 30일 넘게 살았어야 돼요. 신분증도 가져와요!',award:['선거','투표하다']}]},
+ {id:'voterA',name:'주민',x:15,y:9,dir:'down',look:{hair:'#3B2A22',skin:'#D9A47A',shirt:'#3FA86B',pants:'#3A3F55'},badge:['찬성하다'],
+  after:'기자님, 양쪽 이야기를 다 들어 주세요! 🙂',
+  pool:VOTER,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'선거 이야기요? 기자님한테만 말할 거예요. 😄'}]:null,
+  talk:[
+   {say:'안녕하세요! 저는 정부를 바꾸는 것에 찬성해요.'},
+   {say:'구마다 의원이 있으면 시민 목소리가 시청에 더 가까워져요.'},
+   VOTER[0],VOTER[1],VOTER[2],
+   {say:'옆 사람은 반대해요. 그 이야기도 들어 보세요. 기자는 중립적이어야 돼요!',award:['찬성하다']}]},
+ {id:'voterB',name:'주민',x:17,y:9,dir:'down',look:{hair:'#E0C070',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#3A3F55',long:1},
+  talk:[
+   {say:'저는 반대해요. 의원들이 자기 구만 생각할까 봐 걱정돼요.'},
+   {say:'그리고 특별 선거는 돈이 많이 들어요. 10만 달러가 넘어요.'},
+   {say:'찬성도 있고 반대도 있어요. 결정은 시민들이 투표로 해요.'}]},
+ {id:'candy',name:'사탕 가게 사장',x:4,y:15,dir:'down',look:{hair:'#5A3A22',skin:'#F1C9A5',shirt:'#F6A5B8',pants:'#3A3A48'},badge:['은퇴하다','물려받다'],
+  after:'치퍼 하나 드실래요? 맛은 그대로예요! 🍫',
+  pool:CANDY,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'어서 오세요! 초콜릿 냄새 좋죠? 🍫'}]:null,
+  talk:[
+   {say:'안녕하세요, 기자님! 여기는 캐럴 위드먼 사탕 가게예요. 🍫'},
+   {say:'저는 션이에요. 캐럴 고모의 조카예요.'},
+   {say:'고모하고 고모부가 34년 동안 이 가게를 했어요.'},
+   CANDY[0],CANDY[1],CANDY[2],CANDY[3],
+   {say:'레시피는 거의 그대로예요. 걱정하지 마세요! 😊',award:['은퇴하다','물려받다']}]},
+ {id:'chicken',name:'점장',x:12,y:15,dir:'down',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#D9544B',pants:'#2E3548',cap:'#D9544B'},badge:['개업하다','일자리'],
+  after:'개업하는 날 소 옷 입고 오세요! 🐄',
+  pool:SHOP,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'아직 준비 중이에요. 곧 문을 열어요! 🐔'}]:null,
+  talk:[
+   {say:'안녕하세요, 기자님! 저는 새 칙필레 점장이에요. 🐔'},
+   {say:'남쪽 파고, 55번가에 새 가게를 열어요.'},
+   SHOP[0],SHOP[1],SHOP[2],SHOP[3],
+   {say:'개업하는 날 소 옷을 입고 오면 음식 하나가 무료예요! 🐄',award:['개업하다','일자리']}]},
+ {id:'cow',name:'손님',x:14,y:15,dir:'left',still:1,look:{hair:'#1F1F1F',skin:'#F3D0B0',shirt:'stripe',pants:'#F4F4F4'},
+  talk:[{say:'저는 벌써 소 옷을 샀어요. 음메~ 🐄'},{say:'10월 8일 아침에 제일 먼저 올 거예요!'}]},
+ {id:'librarian',name:'사서',x:20,y:15,dir:'down',look:{hair:'#3B2A22',skin:'#F3D0B0',shirt:'#5BB5A8',pants:'#3A3F55',long:1},badge:['전시회','무료'],
+  after:'사진 전시회 꼭 보러 오세요! 📷',
+  pool:LIB,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'도서관에 어서 오세요! 📚'}]:null,
+  talk:[
+   {say:'안녕하세요, 기자님! 도서관에 어서 오세요. 📚'},
+   {say:'지금 시내 중앙 도서관에서 사진 전시회를 해요. 이름은 "노던 포커스 2026"이에요.'},
+   LIB[0],LIB[1],LIB[2],LIB[3],
+   {say:'9살 이하 어린이는 어른하고 같이 와야 돼요.',award:['전시회','무료']}]},
+ {id:'police',name:'경찰관',x:21,y:10,dir:'left',look:{hair:'#1E1E24',skin:'#E8B98F',shirt:'#2E3548',pants:'#2E3548',cap:'#2E3548'},badge:['단속하다'],
+  after:'천천히, 안전하게 운전하세요! 🚓',
+  pool:COP,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'안녕하세요. 파고 경찰이에요. 🚓'}]:null,
+  talk:[
+   {say:'안녕하세요, 기자님. 파고 경찰이에요. 🚓'},
+   {say:'요즘 길에서 차로 경주하는 사람들이 있어요. 아주 위험해요.'},
+   COP[0],COP[1],COP[2],
+   {say:'천천히, 안전하게 운전하세요!',award:['단속하다']}]},
+ ],
+});
+})();
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 6편 · 복습 학교
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   Review of words and slips from recent practice chats (이자, 엔, 받다/맞다, 나아야, 고쳐야,
+   예를 들면, 첫 번째, 견디다/참다, 어울리다, 개선되다/개선하다, 저장하다, 어른/성인).
+   Seven teachers each check a word or two; the principal hands over the 졸업장 once all are done.
+   ===================================================================== */
+(()=>{
+const TEACH=['korean','nurse','shop','pc','art','pe','social'];
+const done=()=>NPCS.filter(n=>TEACH.includes(n.id)&&n.badge.every(has)).length;
+
+CARTRIDGES.push({
+ id:'c6', n:'6편', title:'복습 학교', color:'#E9A23B', save:'daneo-maul-v6',
+ words:[['처음이자','first and also'],['-엔','= 에는'],['받다','to receive, catch'],['낫다','to get better'],['고치다','to fix'],['개선되다','to get better (by itself)'],['저장하다','to save, store'],['첫 번째','the first'],['어울리다','to go well together'],['견디다','to endure'],['예를 들다','to give an example'],['어른','grown-up']],
+ start:{x:12,y:9,dir:'down'},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['<b>처음이자</b> 마지막 기회 = 처음<b>이고</b> 마지막<b>인</b> 기회','다음<b>엔</b> = 다음<b>에는</b> · 주말<b>엔</b> = 주말<b>에는</b>','배지를 <b>받아요</b> · 정답이 <b>맞아요</b> · 공에 <b>맞아요</b>','낫다 → <b>나아요</b>, <b>나아야</b> 돼요 · 고치다 → <b>고쳐요</b>, <b>고쳐야</b> 돼요','내가 <b>개선해요</b> · 실력이 <b>개선돼요</b>','<b>예를 들면</b> (드르면 ✗) · <b>첫 번째</b> (1번째 ✗)','<b>참다</b>: 잠깐, 하고 싶은 걸 안 해요 · <b>견디다</b>: 오래, 힘든 걸 버텨요','<b>어른</b>: 말할 때 · <b>성인</b>: 서류, 법'],
+ intro:['단어 마을 6편! 오늘은 복습 학교예요. 🏫','최근에 배운 단어를 다시 연습해요. 틀렸던 것도 있어요!','선생님 일곱 명을 만나 보세요. 다 만나면 교장 선생님한테 가요.'],
+ done:['축하해요! 배지 열두 개를 다 모았어요! 🎉','처음이자, -엔, 받다, 낫다, 고치다, 개선되다, 저장하다, 첫 번째, 어울리다, 견디다, 예를 들다, 어른!','? 가 있는 선생님한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열두 개! 모든 단어가 완벽해요!','한국어 실력이 많이 개선됐어요. 👏'],
+
+ quest(){
+  const n=done();
+  if(n<TEACH.length)return {text:`🏫 선생님들을 만나요! ${n}/${TEACH.length}`};
+  if(!state.graduated)return {late:true,text:'🎓 교장 선생님한테 가서 졸업장을 받아요!'};
+  return null;
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'Z':{tile:'schoolWall'},'=':{tile:'wood',walk:1},'q':{tile:'floor',walk:1},'k':{tile:'board'},'e':{tile:'desk'},
+  'b':{tile:'bed'},'l':{tile:'laptopTable'},'w':{tile:'workbench'},'i':{tile:'easel'},'F':{tile:'field',walk:1},
+  'n':{tile:'bench'},'~':{tile:'pond'},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.ZZZZZZZZZZ..ZZZZZZZZZZ.T",
+"T.Zkkkk====Z..Zqqb=qlllZ.T",
+"T.Z========Z..Zqqqb=qqqZ.T",
+"T.Z=e=e=e==Z..Zqqqq=qqqZ.T",
+"T.Z========Z..Zqqqq=qqqZ.T",
+"T.ZZZZ=ZZZZZ..ZZZZZZqZZZ.T",
+"T.....,.p.....p.....,....T",
+"T.....,,,,,,,,,,,,,,,....T",
+"T..**.,...~~~......,.....T",
+"T.....,...~~~......,.....T",
+"T.w...,,,,,,,,,,,,,,,....T",
+"T.........,....FFFFFFFFF.T",
+"T..i......,....FFFFFFFFF.T",
+"T.........,....FFFFFFFFF.T",
+"T..T..n...,....FFFFFFFFF.T",
+"T.........,..............T",
+"T........................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '8,8':['표지판','교실 · 국어 수업 중 📖'],
+ '14,8':['표지판','보건실하고 컴퓨터실이에요. 💊💻'],
+ },
+ things:{
+  T:sayAt(...TREES),
+  Z:sayAt('학교 벽이에요. 안에서 "다시 말해 주세요!" 소리가 나요. 🏫','큰 시계가 있어요. 공부 시간이에요! 🕘','창문 안에 학생들이 공부해요. ✏️'),
+  k:()=>[{say:'칠판이에요. "처음이자 마지막 기회" 라고 써 있어요. ✏️'}],
+  e:()=>[{say:'책상이에요. 공책에 "예를 들면" 이라고 써 있어요. 📒'}],
+  b:()=>[{say:'보건실 침대예요. 아프면 여기에 누워요. 🛏️'}],
+  l:()=>[{say:'컴퓨터예요. 화면에 "저장할까요? 네 / 아니요" 가 있어요. 💾'}],
+  w:()=>[{say:'작업대예요. 고장 난 의자가 있어요. 🔧'}],
+  i:()=>[{say:'그림이에요. 빨강하고 파랑으로 그렸어요. 잘 어울려요! 🎨'}],
+  n:()=>[{say:'벤치예요. 앉아서 쉬어요.'}],
+  '~':sayAt('연못이에요. 공이 빠졌어요! 체육 선생님이 "받아요!" 했는데… ⚽💦','오리가 줄을 서요. 첫 번째 오리, 두 번째 오리, 세 번째 오리… 🦆🦆🦆'),
+ },
+
+ npcs:[
+ {id:'korean',name:'국어 선생님',x:5,y:4,dir:'down',look:{hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#8E7CC3',pants:'#3A3F55',long:1},badge:['처음이자','-엔'],
+  after:'다음엔 더 어려운 문법을 해요! 📖',
+  talk:[
+   {say:'안녕하세요! 국어 선생님이에요. 오늘은 문법 복습이에요. 📖'},
+   {w:'처음이자',ask:'오늘이 처음이에요. 그리고 마지막이에요. 처음___ 마지막 기회예요!',opts:[['이자',1],['이고',0,'"이고" 다음에는 "마지막인 기회"가 돼야 돼요. 명사 앞에 바로 → "처음이자 마지막 기회".'],['하고',0,'"하고"는 두 개를 같이 말해요. 한 기회가 처음이고 마지막 → "이자".']]},
+   {w:'처음이자',ask:'"그는 선생님이자 작가예요." 이 사람은 몇 명이에요?',opts:[['한 명이에요.',1],['두 명이에요.',0,'"이자"는 한 사람이 두 가지예요. 선생님이고, 또 작가예요. 한 명!']]},
+   {w:'-엔',ask:'"다음엔 제가 빌려줄게요." "다음엔"은 뭐예요?',opts:[['다음에는',1],['다음에서',0,'"엔"은 "에 + 는"이에요. 다음에는 → "다음엔".']]},
+   {w:'-엔',ask:'"주말___ 빨래해요." (주말에는)',opts:[['엔',1],['은',0,'"주말은"도 말이 돼요. 그런데 "주말에는"을 짧게 하면 "주말엔"이에요.']]},
+   {say:'좋아요! "이자"하고 "엔", 이제 잘 알아요.',award:['처음이자','-엔']}]},
+ {id:'student',name:'학생',x:8,y:5,dir:'up',still:1,look:{hair:'#3B2A22',skin:'#F1C9A5',shirt:'#4F7BD6',pants:'#3A3F55'},
+  talk:[{say:'쉿! 수업 중이에요. 🤫'},{say:'오늘은 처음이자 마지막 시험이에요… 떨려요.'}]},
+ {id:'nurse',name:'보건 선생님',x:17,y:5,dir:'down',look:{hair:'#E07A9B',skin:'#F3D0B0',shirt:'#FFFFFF',pants:'#F4C2D0',long:1},badge:['낫다','견디다'],
+  after:'아프면 참지 말고 보건실에 오세요. 💊',
+  talk:[
+   {say:'보건실이에요. 어디 아파요? 💊'},
+   {w:'낫다',ask:'감기에 걸렸어요. 빨리 ___ 돼요.',opts:[['나아야',1],['나야',0,'낫다 → 나아요 → "나아야 돼요". ㅅ이 빠지지만 아가 남아요!'],['낫어야',0,'낫다는 ㅅ이 빠져요. 낫어야 ✗ → "나아야".']]},
+   {w:'낫다',ask:'어제 아팠어요. 오늘은 다 ___.',opts:[['나았어요',1],['낫았어요',0,'ㅅ이 빠져요. 나아요 → "나았어요".']]},
+   {w:'견디다',ask:'화가 났어요. 하지만 잠깐 화를 ___.',opts:[['참았어요',1],['견뎠어요',0,'잠깐, 하고 싶은 걸 안 해요 → "참다". 견디다는 오래, 힘든 걸 버텨요.']]},
+   {w:'견디다',ask:'파고의 겨울은 길고 추워요. 그래도 겨울을 ___.',opts:[['견뎌요',1],['참아요',0,'오래, 힘든 걸 버텨요 → "견뎌요". 추위를 견뎌요!']]},
+   {say:'잘했어요! 아프면 참지 마세요. 꼭 오세요!',award:['낫다','견디다']}]},
+ {id:'pc',name:'컴퓨터 선생님',x:21,y:4,dir:'down',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#3FA86B',pants:'#2E3548'},badge:['저장하다','첫 번째'],
+  after:'파일은 자주 저장하세요! 💾',
+  talk:[
+   {say:'컴퓨터실이에요. 💻'},
+   {w:'저장하다',ask:'게임을 끄기 전에 꼭 ___. 안 하면 다 없어져요!',opts:[['저장해요',1],['개선해요',0,'개선은 더 좋게 해요. 나중에 다시 쓰려고 남겨요 → "저장해요".']]},
+   {w:'저장하다',ask:'"저장"은 컴퓨터에만 써요?',opts:[['아니요, 음식이나 물건도 저장해요.',1],['네, 컴퓨터에만 써요.',0,'아니에요! 김치를 냉장고에 저장해요. 물건도 저장해요.']]},
+   {w:'첫 번째',ask:'1번, 2번, 3번 문장 중에서 1번 문장은?',opts:[['첫 번째 문장',1],['일 번째 문장',0,'1은 "첫" 이에요. 첫 번째, 두 번째, 세 번째!'],['하나 번째 문장',0,'"하나" 대신 "첫"이에요. 첫 번째!']]},
+   {w:'첫 번째',ask:'2번 문장은?',opts:[['두 번째 문장',1],['둘 번째 문장',0,'"둘" 대신 "두"예요. 두 번째!']]},
+   {say:'정답! 첫 번째 파일도, 두 번째 파일도 저장했어요. 💾',award:['저장하다','첫 번째']}]},
+ {id:'shop',name:'기술 선생님',x:3,y:12,dir:'right',look:{hair:'#5A3A22',skin:'#D9A47A',shirt:'#B5654A',pants:'#3A3A48',cap:'#F2C94C'},badge:['고치다','개선되다'],
+  after:'고장 나면 버리지 말고 고쳐요! 🔧',
+  talk:[
+   {say:'기술 선생님이에요. 이 의자가 고장 났어요. 🔧'},
+   {w:'고치다',ask:'의자가 고장 났어요. 의자를 ___ 돼요.',opts:[['고쳐야',1],['고치해야',0,'"고치다"는 "하다"가 없어요. 고치 + 어야 → "고쳐야".'],['고치어야',0,'고치 + 어야 = 고쳐야. 짧게 해요!']]},
+   {w:'고치다',ask:'어제 의자를 ___.',opts:[['고쳤어요',1],['고치했어요',0,'"하다"가 아니에요. 고치 + 었어요 → "고쳤어요".']]},
+   {w:'개선되다',ask:'제가 매일 연습해요. 그래서 제 실력이 ___.',opts:[['개선됐어요',1],['개선했어요',0,'실력이 혼자 좋아졌어요 → "개선됐어요". 제가 무엇을 좋게 하면 → "개선했어요".']]},
+   {w:'개선되다',ask:'제가 게임을 더 좋게 만들었어요. 제가 게임을 ___.',opts:[['개선했어요',1],['개선됐어요',0,'제가 했어요 → "개선했어요". 게임이 좋아졌어요 → "게임이 개선됐어요".']]},
+   {say:'좋아요! 의자도 고치고, 실력도 개선됐어요!',award:['고치다','개선되다']}]},
+ {id:'art',name:'미술 선생님',x:4,y:14,dir:'left',look:{hair:'#C0582E',skin:'#F3D0B0',shirt:'#F2C94C',pants:'#3A3F55',long:1},badge:['어울리다'],
+  after:'색을 조합하는 건 재미있어요! 🎨',
+  talk:[
+   {say:'미술 선생님이에요. 그림 그려요! 🎨'},
+   {ask:'"빨간 하고 파란"은 조금 이상해요. 색 이름은?',opts:[['빨강하고 파랑',1],['빨갛하고 파랗',0,'색 이름은 "빨강, 파랑, 노랑"이에요. 아니면 "빨간색, 파란색"!']]},
+   {ask:'빨강하고 파랑이 잘 맞아요. 두 색이 잘 ___.',opts:[['어울려요',1],['조합해요',0,'"조합하다"는 섞어요. 잘 맞아요 → "어울려요".'],['고쳐요',0,'고치다는 고장 난 걸 다시 되게 해요. 잘 맞아요 → "어울려요".']]},
+   {ask:'"좋은 조합이에요"는 무슨 뜻이에요?',opts:[['같이 있으면 좋아요.',1],['고장 났어요.',0,'조합은 같이 섞은 거예요. "좋은 조합" = 같이 있으면 좋아요.']]},
+   {ask:'이 모자가 당신한테 잘 ___!',opts:[['어울려요',1],['맞아요',0,'"맞아요"는 크기가 딱 좋아요. 보기에 좋아요 → "어울려요".']]},
+   {say:'멋져요! 색이 아주 잘 어울려요.',award:['어울리다']}]},
+ {id:'pe',name:'체육 선생님',x:19,y:14,dir:'down',look:{hair:'#1E1E24',skin:'#E3B48C',shirt:'#D9544B',pants:'#2E3548',cap:'#2E3548'},badge:['받다'],
+  after:'공을 잘 받아요! 다음엔 시합해요. ⚽',
+  talk:[
+   {say:'체육 선생님이에요! 공 던질게요. 받아요! ⚽'},
+   {ask:'공이 날아와요. 손으로 잡아요. 공을 ___.',opts:[['받아요',1],['맞아요',0,'"공에 맞아요"는 공이 몸에 와서 부딪혀요. 아파요! 손으로 잡아요 → "받아요".']]},
+   {ask:'앗! 공이 머리에 왔어요. 머리에 공을 ___.',opts:[['맞았어요',1],['받았어요',0,'머리로 잡지 않았어요. 부딪혔어요 → "맞았어요". 😵']]},
+   {ask:'정답을 말하면 배지를 ___ 수 있어요.',opts:[['받을',1],['맞을',0,'배지는 "받아요"! 정답이 "맞아요". 받다하고 맞다는 달라요.']]},
+   {ask:'"정답이에요!" = 정답이 ___.',opts:[['맞아요',1],['받아요',0,'정답이면 "맞아요"! 배지는 "받아요".']]},
+   {say:'완벽해요! 배지를 받았어요! 🏅',award:['받다']}]},
+ {id:'social',name:'사회 선생님',x:7,y:16,dir:'left',look:{hair:'#9A9AA3',skin:'#F1C9A5',shirt:'#5B8BD9',pants:'#3A3A48'},badge:['어른','예를 들다'],
+  after:'예를 들면… 이 학교 선생님들은 다 어른이에요! 😄',
+  talk:[
+   {say:'사회 선생님이에요. 오늘은 사람에 대해서 공부해요.'},
+   {w:'예를 들다',ask:'다른 예를 말해 주세요. 예를 ___ 주세요.',opts:[['들어',1],['드러',0,'들다 → 들어요. 예를 "들어" 주세요.']]},
+   {w:'예를 들다',ask:'"예를 ___, 사과하고 귤은 과일이에요."',opts:[['들면',1],['드르면',0,'들다 → 들면. "예를 들면"!'],['들으면',0,'"들으면"은 "듣다"예요 (소리를 들어요). 예 → "들면".']]},
+   {w:'어른',ask:'다 큰 사람이에요. 보통 말할 때 ___이라고 해요.',opts:[['어른',1],['청소년',0,'청소년은 10대예요. 다 큰 사람 → "어른".']]},
+   {w:'어른',ask:'영화관 표: "___ 15,000원, 청소년 12,000원". 공식적인 말은?',opts:[['성인',1],['어린이',0,'어린이는 아이예요. 표나 서류에는 "성인"을 많이 써요.']]},
+   {w:'어른',ask:'할머니한테 인사해요. "___께 인사해야 돼요."',opts:[['어른',1],['성인',0,'존경하는 느낌 → "어른". 성인은 법이나 서류에 써요.']]},
+   {say:'잘했어요! 예를 들면, 저도 어른이에요. 😊',award:['어른','예를 들다']}]},
+ {id:'principal',name:'교장 선생님',x:12,y:8,dir:'down',look:{hair:'#E8E8EE',skin:'#F1C9A5',shirt:'#2E3548',pants:'#2E3548',belt:'#F2C94C'},badge:[],
+  status:()=>done()<TEACH.length?'wait':state.graduated?undefined:'todo',
+  script:()=>{
+   if(done()<TEACH.length)return [{say:`어서 와요! 저는 교장이에요. 선생님 ${TEACH.length-done()}명을 더 만나 보세요. 🏫`}];
+   if(!state.graduated)return [
+    {say:'선생님들을 다 만났어요? 대단해요!'},
+    {say:'오늘 복습한 문장을 한 번 더 말해 볼까요?'},
+    {who:'당신',say:'이건 처음이자 마지막 기회예요. 다음엔 더 잘할 거예요!'},
+    {who:'당신',say:'감기는 다 나았어요. 고장 난 의자도 고쳤어요.'},
+    {who:'당신',say:'예를 들면, 정답이 맞으면 배지를 받아요!'},
+    {say:'완벽해요! 졸업장을 받으세요. 🎓',set:()=>{state.graduated=true}},
+    {say:'한국어 실력이 많이 개선됐어요. 축하해요! 🎉'}];
+   return [{say:'졸업 축하해요! 다음엔 더 어려운 단어를 공부해요. 🎓'}];
+  }},
+ ],
+});
+})();
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 7편 · 한국 뉴스
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   You're the reporter again, now at a Seoul station. Real news from Oct 2–3, 2026:
+   Aichi-Nagoya Asian Games (men's recurve archery team gold, LoL team gold — both back-to-back),
+   bank hacking (Shinhan, KB, Hana, BNK Busan; FSC emergency meeting, Hana promises compensation),
+   and 한글날 (Oct 9 public holiday). Ending: stand on the ✕ in front of the camera and broadcast.
+   state.stage: 0 start · 1 interviewing · 2 go to the ✕ · 3 broadcast done
+   ===================================================================== */
+(()=>{
+const SOURCES=['archer','gamer','banker','expert','guide'];
+const done=()=>NPCS.filter(n=>SOURCES.includes(n.id)&&n.badge.every(has)).length;
+const go=n=>()=>{state.stage=n};
+const EDIT=[
+ {w:'기자',ask:'파고에서도 했어요! 뉴스를 취재하는 사람은 ___예요.',opts:[['기자',1],['앵커',0,'앵커는 방송에서 뉴스를 읽어요. 밖에서 취재해요 → "기자".'],['관중',0,'관중은 경기를 보는 사람이에요. 뉴스를 취재해요 → "기자".']]},
+ {w:'취재하다',ask:'기자가 사람들을 만나서 이야기를 듣고 알아봐요. 기자가 ___.',opts:[['취재해요',1],['보상해요',0,'보상은 피해를 돈으로 갚아요. 뉴스를 알아봐요 → "취재해요".'],['유출돼요',0,'유출은 정보가 밖으로 새요. 뉴스를 알아봐요 → "취재해요".']]},
+ {w:'취재하다',ask:'"취재"하고 "보도", 뭐가 먼저예요?',opts:[['취재가 먼저, 보도는 나중',1],['보도가 먼저, 취재는 나중',0,'먼저 알아봐요(취재). 그다음 뉴스로 알려요(보도).']]},
+ {w:'보도하다',ask:'카메라 앞이에요. 이제 뉴스를 ___ 시간이에요!',opts:[['보도할',1],['취재할',0,'취재는 벌써 했어요! 이제 뉴스로 알려요 → "보도할".'],['유출할',0,'😄 뉴스는 유출 안 해요! 알려요 → "보도할".']]},
+ {w:'보도하다',ask:'"보도"는 뜻이 두 개였어요. 뉴스 말고 하나 더는?',opts:[['사람이 걷는 길',1],['사람이 타는 차',0,'보도(步道)는 사람이 걷는 길이에요. 파고 뉴스에서 배웠어요!']]},
+];
+const ARCH=[
+ {w:'금메달',ask:'1등은 금메달. 2등은 ___이에요.',opts:[['은메달',1],['동메달',0,'동메달은 3등이에요. 1등 금, 2등 "은", 3등 동!']]},
+ {w:'금메달',ask:'"금빛 활"은 무슨 뜻이에요?',opts:[['금메달을 딴 활 솜씨',1],['금으로 만든 활',0,'진짜 금이 아니에요! 금메달처럼 빛나는 활 솜씨예요.']]},
+ {w:'결승',ask:'마지막 경기예요. 이기면 금메달이에요. 이 경기는 ___이에요.',opts:[['결승',1],['결석',0,'결석은 학교에 안 가요! 마지막 경기 → "결승".'],['준결승',0,'준결승은 결승 바로 전이에요. 마지막 경기 → "결승".']]},
+ {w:'결승',ask:'한국 남자 양궁 대표팀은 결승에서 누구를 이겼어요?',opts:[['인도',1],['대만',0,'대만은 LoL 결승 상대예요. 양궁은 "인도"를 이겼어요.']]},
+];
+const GAME=[
+ {w:'연패',ask:'지난 아시안게임에서도 금메달, 이번에도 금메달! 2___예요.',opts:[['연패',1],['결승',0,'결승은 마지막 경기예요. 두 번 연속 우승 → "2연패".']]},
+ {w:'연패',ask:'조심! "연패"는 뜻이 두 개예요. "3연패 했어요. 너무 슬퍼요." 무슨 뜻이에요?',opts:[['세 번 연속 졌어요.',1],['세 번 연속 이겼어요.',0,'슬퍼요 → 졌어요! 連敗는 계속 져요. 連霸는 계속 이겨요. 글로 보면 똑같아요! 😄']]},
+ {w:'연패',ask:'LoL 대표팀은 결승에서 대만을 몇 대 몇으로 이겼어요?',opts:[['3 대 0',1],['3 대 2',0,'한 세트도 안 졌어요! "3 대 0"이에요.']]},
+];
+const BANK=[
+ {w:'개인정보',ask:'이름, 주소, 전화번호, 이메일… 나에 대한 이런 정보는 ___예요.',opts:[['개인정보',1],['신분증',0,'신분증은 카드예요. 나에 대한 정보 → "개인정보".'],['일자리',0,'일자리는 일하는 곳이에요. 나에 대한 정보 → "개인정보".']]},
+ {w:'개인정보',ask:'"개인"은 무슨 뜻이에요?',opts:[['한 사람',1],['많은 사람',0,'개인(個人)은 한 사람이에요. 반대는 "단체".']]},
+ {w:'보상하다',ask:'은행 잘못으로 손님이 돈을 잃었어요. 은행이 그 돈을 다 ___.',opts:[['보상해요',1],['보도해요',0,'보도는 기자가 뉴스로 알려요. 피해를 돈으로 갚아요 → "보상해요".'],['저장해요',0,'저장은 남겨 둬요. 피해를 돈으로 갚아요 → "보상해요".']]},
+ {w:'보상하다',ask:'"피해"는 무슨 뜻이에요?',opts:[['나쁜 일로 손해를 봤어요.',1],['좋은 선물을 받았어요.',0,'피해는 나쁜 거예요! 해킹 피해, 비 피해… 손해를 봤어요.']]},
+];
+const SEC=[
+ {w:'해킹',ask:'나쁜 사람이 몰래 다른 컴퓨터에 들어가요. 그건 ___이에요.',opts:[['해킹',1],['저장',0,'저장은 파일을 남겨요. 몰래 들어가요 → "해킹".'],['취재',0,'취재는 기자가 해요! 몰래 들어가요 → "해킹".']]},
+ {w:'해킹',ask:'이번 해킹 뉴스에 나온 은행이 아닌 곳은?',opts:[['파고 은행',1],['하나은행',0,'하나은행도 해킹 피해가 있었어요. 신한, 국민, 하나, 부산은행이에요.']]},
+ {w:'유출되다',ask:'정보가 밖으로 새어 나갔어요. 개인정보가 ___.',opts:[['유출됐어요',1],['보상됐어요',0,'보상은 피해를 갚아요. 밖으로 새어 나갔어요 → "유출됐어요".'],['개선됐어요',0,'개선은 좋아져요. 😅 밖으로 새어 나갔어요 → "유출됐어요".']]},
+ {w:'유출되다',ask:'해커가 정보를 밖으로 빼냈어요. 해커가 정보를 ___. (내가 했어요)',opts:[['유출했어요',1],['유출됐어요',0,'"되다"는 혼자 그렇게 됐어요. 해커가 했어요 → "유출했어요". 개선하다/개선되다랑 같아요!']]},
+];
+const HAN=[
+ {w:'공휴일',ask:'학교도 회사도 쉬어요. 나라에서 정한 쉬는 날이에요. 그건 ___이에요.',opts:[['공휴일',1],['주말',0,'주말은 토요일, 일요일이에요. 나라가 정한 쉬는 날 → "공휴일".'],['생일',0,'생일은 태어난 날이에요. 나라가 정한 쉬는 날 → "공휴일".']]},
+ {w:'공휴일',ask:'한글날은 언제예요?',opts:[['10월 9일',1],['10월 3일',0,'10월 3일은 개천절이에요. 이것도 공휴일이에요! 한글날은 "10월 9일".']]},
+ {w:'기념하다',ask:'중요한 날을 잊지 않으려고 특별하게 보내요. 그날을 ___.',opts:[['기념해요',1],['보상해요',0,'보상은 피해를 갚아요. 중요한 날을 특별하게 → "기념해요".']]},
+ {w:'기념하다',ask:'한글날에는 무엇을 기념해요?',opts:[['세종대왕이 한글을 만든 것',1],['한국 축구가 이긴 것',0,'한글날은 한글을 기념해요. 세종대왕이 1443년에 만들었어요.']]},
+ {w:'기념하다',ask:'여행에서 산 작은 물건은 "___품"이에요.',opts:[['기념',1],['공휴',0,'여행을 기억하는 물건 → "기념품". 공휴일은 쉬는 날이에요.']]},
+];
+
+CARTRIDGES.push({
+ id:'c7', n:'7편', title:'한국 뉴스', color:'#3E7F78', save:'daneo-maul-v7',
+ sources:[['남자 양궁 단체전, 인도를 이기고 금메달','https://imnews.imbc.com/news/2026/sports/article/6855438_36946.html','MBC 뉴스'],
+  ['리그 오브 레전드, 대만 3-0 · 아시안게임 2연패','https://www.newspim.com/news/view/20261002001017','뉴스핌'],
+  ['신한·국민·하나·부산은행 해킹으로 정보 유출','https://www.seoul.co.kr/news/economy/finance/2026/10/02/20261002500271','서울신문'],
+  ['한글날 (10월 9일)','https://ko.wikipedia.org/wiki/%ED%95%9C%EA%B8%80%EB%82%A0','위키백과']],
+ words:[['기자','reporter'],['취재하다','to cover (news)'],['보도하다','to report'],['금메달','gold medal'],['결승','final (match)'],['연패','back-to-back wins / losses'],['개인정보','personal info'],['보상하다','to compensate'],['해킹','hacking'],['유출되다','to be leaked'],['공휴일','public holiday'],['기념하다','to commemorate']],
+ start:{x:10,y:8,dir:'down'},
+ fresh:{stage:0},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['<b>취재</b>(알아봐요) → <b>보도</b>(알려요)','금메달 1등 · 은메달 2등 · 동메달 3등 · <b>결승</b> = 마지막 경기','<b>연패</b> 두 개! 連霸 계속 이겨요 · 連敗 계속 져요','<b>유출되다</b>: 정보가 새어 나가요 · 해커가 <b>유출하다</b>','<b>보상하다</b>: 피해를 돈으로 갚아요','<b>공휴일</b>: 나라가 정한 쉬는 날 · 한글날 10월 9일','<b>기념하다</b> · 기념일 · 기념품'],
+ intro:['단어 마을 7편! 이번엔 한국 뉴스예요. 🇰🇷📰','당신은 다시 기자예요. 이번엔 서울 방송국이에요!','먼저 방송국에 가서 편집장을 만나요.'],
+ done:['축하해요! 배지 열두 개를 다 모았어요! 🎉','기자, 취재하다, 보도하다, 금메달, 결승, 연패, 개인정보, 보상하다, 해킹, 유출되다, 공휴일, 기념하다!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열두 개! 모든 단어가 완벽해요!','한국 뉴스 기자로 금메달이에요! 🥇'],
+
+ quest(){
+  if(state.stage===0)return {text:'📺 서울 방송국에 가서 편집장을 만나요.'};
+  if(state.stage===1){const n=done();return n<SOURCES.length?{text:`🎤 한국 뉴스를 취재해요! ${n}/${SOURCES.length}`}:{late:true,text:'📺 취재 끝! 방송국에 가서 편집장한테 말해요.'}}
+  if(state.stage===2)return {late:true,text:'🎥 카메라 앞 ✕ 표시에 서세요. 방송 시작!'};
+  return null;
+ },
+ onStep(){
+  if(state.stage!==2||player.x!==7||player.y!==4)return;
+  held=null;player.dir='left';
+  openDialog('감독',[
+   {say:'기자님, 준비됐어요? 카메라를 보세요! 🎥'},
+   EDIT[3],EDIT[4],
+   {say:'좋아요! 셋, 둘, 하나… 큐! 🔴',award:['보도하다']},
+   {who:'당신',say:'안녕하십니까, 한국 뉴스입니다.'},
+   {who:'당신',say:'아이치·나고야 아시안게임에서 한국 남자 양궁 대표팀이 결승에서 인도를 이기고 금메달을 땄습니다.'},
+   {who:'당신',say:'리그 오브 레전드 대표팀도 대만을 3 대 0으로 이기고 2연패를 했습니다.'},
+   {who:'당신',say:'한편, 신한, 국민, 하나, 부산은행이 해킹을 당해 개인정보가 유출됐습니다. 은행은 피해를 보상하겠다고 했습니다.'},
+   {who:'당신',say:'다음 주 10월 9일은 한글날입니다. 공휴일입니다. 지금까지 한국 뉴스였습니다!',set:go(3)},
+   {who:'편집장',say:'완벽해요! 서울에서도 최고의 기자예요. 👏'}]);
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'N':{tile:'stationWall'},'=':{tile:'wood',walk:1},'e':{tile:'desk',over:1},'m':{tile:'tvcam'},'x':{tile:'mark',walk:1},
+  'K':{tile:'bankWall'},'V':{tile:'bigScreen'},'M':{tile:'museumWall'},'Q':{tile:'statue'},'_':{tile:'sand',walk:1},
+  '~':{tile:'pond'},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.NNNNNNNN.....KKKKKKKK..T",
+"T.N======N.....KKKKKKKK..T",
+"T.N=e=mx=N.....KKKKKKKK..T",
+"T.N======N.....KKKKKKKK..T",
+"T.NNN=NNNN.....KKKKKKKK..T",
+"T....,.p...p.....,.p.....T",
+"T....,,,,,,,,,,,,,,,,,,..T",
+"T........~~~~............T",
+"T..**....~~~~........**..T",
+"T....,,,,,,,,,,,,,,,,,,..T",
+"T..VVVVVV.......MMMMMMM..T",
+"T..VVVVVV.......MMMMMMM..T",
+"T..______.......MMMMMMM..T",
+"T..______.........Q......T",
+"T..______................T",
+"T........................T",
+"T........................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '11,7':['표지판','단어 마을 7편 · 한국 뉴스! 배지 열두 개를 모아요.'],
+ '7,7':['표지판','서울 방송국 · 오늘의 한국 뉴스 📺'],
+ '19,7':['표지판','은행 · 오늘은 보안 점검 중이에요. 🔒'],
+ },
+ things:{
+  T:sayAt(...TREES),
+  e:()=>[{say:'편집장 책상이에요. 오늘 뉴스 원고가 있어요. 📝'}],
+  m:()=>[{say:state.stage===2?'카메라 앞 ✕ 표시에 서세요! 🎥':'방송 카메라예요. 🎥'}],
+  N:sayAt('서울 방송국이에요. 📺','방송국 벽이에요. 안에서 "큐!" 소리가 나요.'),
+  K:sayAt('은행이에요. 🏦 문 앞에 "보안 점검 중" 종이가 있어요.','은행 벽이에요. 경비원이 많아요. 🔒','창문 안에서 직원들이 바빠요.'),
+  V:sayAt('큰 화면이에요! 아시안게임 경기가 나와요. 📺🏹','화면에 "금메달!" 글자가 나와요. 🥇','LoL 결승이에요! 관중들이 소리 질러요. 🎮'),
+  M:sayAt('한글 박물관이에요. 📜','박물관 벽에 "ㄱ ㄴ ㄷ ㄹ" 이 있어요.','안에 옛날 책이 많아요.'),
+  Q:()=>[{say:'세종대왕 동상이에요. 한글을 만든 왕이에요. 👑'}],
+  '~':sayAt('연못이에요. 한강은 아니에요. 😄','연못에 휴대폰이 빠졌어요! 개인정보는 안전해요… 아마도. 📱💦'),
+ },
+
+ npcs:[
+ {id:'editor',name:'편집장',x:4,y:3,dir:'down',still:1,look:{hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#3E7F78',pants:'#2E3548',long:1},badge:['기자','취재하다','보도하다'],  // 보도하다 is earned at the camera; the 편집장 reviews it afterwards
+  after:'좋은 뉴스 고마워요. 다음 취재도 부탁해요! 📰',
+  pool:EDIT,
+  status:()=>(state.stage===1&&done()<SOURCES.length)||state.stage===2?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [
+    {say:'어서 와요! 서울 방송국이에요. 📺'},
+    {say:'파고 뉴스, 잘 봤어요! 우리 방송국에서도 기자를 해 주세요.'},
+    EDIT[0],EDIT[1],EDIT[2],
+    {say:'좋아요! 기자증을 받으세요. 🪪',award:['기자','취재하다'],set:go(1)},
+    {say:'이번 주 한국 뉴스가 많아요. 아시안게임, 은행 해킹, 한글날!'},
+    {say:'다섯 명을 취재해 오세요. 광장, 은행, 박물관에 가 보세요.'}];
+   if(state.stage===1&&done()<SOURCES.length)return [{say:`아직 취재 중이에요? 지금 ${done()}명 했어요. 다섯 명 다 만나 보세요!`}];
+   if(state.stage===1)return [
+    {say:'다 취재했어요? 수고했어요!'},
+    {say:'이제 보도할 시간이에요. 카메라 앞 ✕ 표시에 서세요! 🎥',set:go(2)}];
+   if(state.stage===2)return [{say:'카메라 앞 ✕ 표시에 서세요! 방송 시작해요. 🎥'}];
+   return null;
+  }},
+ {id:'anchor',name:'앵커',x:7,y:3,dir:'down',look:{hair:'#1E1E24',skin:'#F1C9A5',shirt:'#D9544B',pants:'#2E3548'},
+  talk:[{say:'저는 앵커예요. 파고에서 온 기자님이죠? 반가워요! 🎙️'},{say:'기자가 취재하고, 앵커가 보도해요. 오늘은 기자님이 직접 보도해요!'}]},
+ {id:'archer',name:'양궁 팬',x:5,y:15,dir:'up',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#F2C94C',pants:'#2E3548',cap:'#D9544B'},badge:['금메달','결승'],
+  after:'한국 양궁 최고! 🏹🥇',
+  pool:ARCH,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'와! 아시안게임 봐요! 🏹 (화면만 봐요.)'}]:null,
+  talk:[
+   {say:'기자님! 방금 봤어요? 양궁이에요! 🏹'},
+   {say:'아이치·나고야 아시안게임, 남자 양궁 단체전이에요.'},
+   ARCH[2],ARCH[3],
+   {say:'김우진, 이우석, 김제덕 선수! 흔들림이 없었어요.'},
+   ARCH[0],ARCH[1],
+   {say:'지난 아시안게임에 이어서 또 금메달이에요!',award:['금메달','결승']}]},
+ {id:'gamer',name:'e스포츠 팬',x:7,y:16,dir:'up',look:{hair:'#C0582E',skin:'#F3D0B0',shirt:'#8E7CC3',pants:'#3A3F55',long:1},badge:['연패'],
+  after:'다음 아시안게임은 3연패! 🎮',
+  pool:GAME,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'쉿! 지금 LoL 결승이에요! 🎮'}]:null,
+  talk:[
+   {say:'기자님, 리그 오브 레전드 결승 봤어요? 🎮'},
+   {say:'한국 대표팀이 대만을 이겼어요! 한 세트도 안 졌어요.'},
+   GAME[2],GAME[0],GAME[1],
+   {say:'우리 대표팀은 좋은 연패예요! 계속 이겨요. 😄',award:['연패']}]},
+ {id:'fan',name:'관중',x:4,y:14,dir:'up',still:1,look:{hair:'#1F1F1F',skin:'#DDAE85',shirt:'#5B8BD9',pants:'#333'},
+  talk:[{say:'대한민국! 짝짝짝 짝짝! 👏'},{say:'오늘 금메달이 두 개예요!'}]},
+ {id:'banker',name:'은행원',x:17,y:7,dir:'down',look:{hair:'#3B2A22',skin:'#F3D0B0',shirt:'#2E3548',pants:'#2E3548',long:1},badge:['개인정보','보상하다'],
+  after:'고객님 정보는 저희가 꼭 지킬게요. 🔒',
+  pool:BANK,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'죄송해요. 지금 바빠요. 🏦'}]:null,
+  talk:[
+   {say:'기자님, 안녕하세요. 은행원이에요. 요즘 정말 바빠요. 🏦'},
+   {say:'여러 은행이 해킹을 당했어요. 손님 정보가 밖으로 나갔어요.'},
+   BANK[0],BANK[1],
+   {say:'하나은행은 손님 89명 정보가 나갔어요. 이름, 주소, 전화번호…'},
+   {say:'그래도 인터넷 뱅킹하고 모바일 뱅킹은 따로 있어서 괜찮다고 했어요.'},
+   BANK[3],BANK[2],
+   {say:'피해가 생기면 은행이 다 보상한다고 했어요.',award:['개인정보','보상하다']}]},
+ {id:'grandma',name:'할머니',x:21,y:7,dir:'down',still:1,look:{hair:'#E8E8EE',skin:'#F1C9A5',shirt:'#B5654A',pants:'#5A3A22',long:1},
+  talk:[{say:'아이고, 내 개인정보도 유출됐을까? 걱정돼요…'},{say:'모르는 전화나 문자는 조심해야 돼요!'}]},
+ {id:'expert',name:'보안 전문가',x:13,y:9,dir:'down',look:{hair:'#1E1E24',skin:'#E8B98F',shirt:'#3FA86B',pants:'#2E3548',cap:'#2E3548'},badge:['해킹','유출되다'],
+  after:'비밀번호는 자주 바꾸세요! 🔐',
+  pool:SEC,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'보안 이야기요? 기자님한테만 말할 거예요. 🔐'}]:null,
+  talk:[
+   {say:'저는 보안 전문가예요. 컴퓨터를 지켜요. 🔐'},
+   SEC[0],SEC[1],
+   {say:'신한은행은 2만 5천 명이 넘어요. 국민은행도 피해가 있었어요.'},
+   {say:'요즘은 AI로 하는 해킹도 있다고 해요.'},
+   SEC[2],SEC[3],
+   {say:'금융위원회가 긴급 회의를 했어요. 모든 시스템을 점검해요.',award:['해킹','유출되다']}]},
+ {id:'guide',name:'해설사',x:20,y:15,dir:'down',look:{hair:'#5A3A22',skin:'#F1C9A5',shirt:'#F6A5B8',pants:'#3A3A48',long:1},badge:['공휴일','기념하다'],
+  after:'한글날에 박물관에 놀러 오세요! 📜',
+  pool:HAN,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'한글 박물관에 어서 오세요! 📜'}]:null,
+  talk:[
+   {say:'기자님, 한글 박물관에 어서 오세요! 📜'},
+   {say:'다음 주 금요일, 10월 9일은 한글날이에요.'},
+   HAN[0],HAN[1],
+   {say:'세종대왕이 한글을 만들었어요. 그래서 한글날에 그걸 기억해요.'},
+   HAN[2],HAN[3],HAN[4],
+   {say:'공휴일에 박물관은 문을 열어요. 사람이 많을 거예요!',award:['공휴일','기념하다']}]},
+ ],
+});
+})();
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 8편 · 가을 축제
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   Built from the player's 찾아본 말 list (Oct 4: 잉어, 손해, 따다, 흔들리다, 튀다, 점검…) and the
+   Oct 5 practice chat (대회/트로피를 받다, 기분/기본, 따다/보다, 흔들리다/힘들다, 바꾸다/바뀌다,
+   발음/발/사투리, 점검/전공, 홍수 + -는데, 아직, 첫눈, 기대하다/기다리다).
+   Story: autumn festival. Help five people, then win the archery 대회 on the ✕ and receive the trophy.
+   state.stage: 0 start · 1 helping · 2 go to the ✕ · 3 trophy done
+   ===================================================================== */
+(()=>{
+const SOURCES=['farmer','kid','tech','mc','grandpa'];
+const done=()=>NPCS.filter(n=>SOURCES.includes(n.id)&&n.badge.every(has)).length;
+const go=n=>()=>{state.stage=n};
+const HOST=[
+ {w:'기분',ask:'축제 날이에요! 오늘 ___이 어때요?',opts:[['기분',1],['기본',0,'기본은 제일 처음, 제일 쉬운 것이에요. 지금 마음 → "기분".'],['기억',0,'기억은 옛날 일을 안 잊어요. 지금 마음 → "기분".']]},
+ {w:'기분',ask:'"기분"하고 "기본", 어떤 게 마음이에요?',opts:[['기분',1],['기본',0,'기본은 제일 쉬운 것, 처음 것이에요. 마음 → "기분".']]},
+ {w:'기분',ask:'선물을 받았어요! 기분이 ___.',opts:[['좋아요',1],['아파요',0,'아파요는 몸이에요. 선물을 받으면 기분이 "좋아요"! 😄']]},
+];
+const FARM=[
+ {w:'흔들리다',ask:'바람이 많이 불어요. 나뭇가지가 ___.',opts:[['흔들려요',1],['힘들어요',0,'힘들다는 어렵고 피곤해요. 소리가 비슷해요! 나무가 움직여요 → "흔들려요".'],['흔들어요',0,'흔들다는 누가 해요. 바람 때문에 나무가 → "흔들려요".']]},
+ {w:'흔들리다',ask:'"흔들리다"하고 "힘들다", 나무한테 쓰는 말은?',opts:[['흔들리다',1],['힘들다',0,'나무는 피곤하지 않아요! 😄 이리저리 움직여요 → "흔들리다".']]},
+ {w:'손해',ask:'사과가 다 떨어졌어요. 팔 수 없어요. 돈을 잃었어요. 이건 ___예요.',opts:[['손해',1],['손님',0,'손님은 가게에 오는 사람이에요. 돈을 잃었어요 → "손해".'],['홍수',0,'홍수는 물이 넘쳐요. 돈을 잃었어요 → "손해".']]},
+ {w:'손해',ask:'손해를 ___.',opts:[['봤어요',1],['땄어요',0,'사과는 따요! 손해는 "봐요". 손해를 봤어요.']]},
+ {w:'따다',ask:'나무에서 사과를 ___.',opts:[['따요',1],['봐요',0,'보다는 눈으로 봐요. 👀 나무에서 떼요 → "따요".'],['걸어요',0,'걷다는 발로 가요. 🚶 나무에서 떼요 → "따요".']]},
+ {w:'따다',ask:'어제는 바빠서 사과를 많이 안 ___.',opts:[['땄어요',1],['봤어요',0,'ㄸ! 강한 소리예요. 따다 → "땄어요".']]},
+ {w:'따다',ask:'"따다"는 사과 말고 또 어디에 써요?',opts:[['금메달을 따요',1],['기분을 따요',0,'기분은 따지 않아요. 한국 뉴스에서 봤어요: 금메달도 "따요"!']]},
+];
+const POND=[
+ {w:'잉어',ask:'연못에 큰 물고기가 있어요. 잉어킹의 그 물고기예요. ___예요!',opts:[['잉어',1],['연어',0,'연어는 바다에서 강으로 와요. 잉어킹 → "잉어".'],['오징어',0,'오징어는 다리가 많아요! 🦑 잉어킹 → "잉어".']]},
+ {w:'잉어',ask:'잉어는 어디에 살아요?',opts:[['연못이나 강',1],['나무 위',0,'😄 잉어는 물고기예요! 물에 살아요.']]},
+ {w:'튀다',ask:'잉어가 뛰었어요. 퐁당! 물이 내 옷에 ___.',opts:[['튀었어요',1],['뛰었어요',0,'뛰다는 잉어가 해요! 물방울은 날아 퍼져요 → "튀었어요".'],['바뀌었어요',0,'옷이 다른 옷이 됐어요? 😄 물방울이 날아왔어요 → "튀었어요".']]},
+ {w:'튀다',ask:'"튀다"하고 "뛰다", 소리가 비슷해요. 물방울은?',opts:[['튀어요',1],['뛰어요',0,'뛰다는 다리로 빨리 가요. 물방울은 → "튀어요".']]},
+ {w:'바뀌다',ask:'잉어킹이 강해졌어요. 잉어킹이 갸라도스로 ___.',opts:[['바뀌었어요',1],['바꿨어요',0,'바꾸다는 누가 해요. 잉어킹이 그렇게 됐어요 → "바뀌었어요".']]},
+ {w:'바뀌다',ask:'우리 형이 잉어킹을 갸라도스로 ___. (형이 했어요)',opts:[['바꿨어요',1],['바뀌었어요',0,'형이 했어요 → "바꿨어요". 개선하다, 개선되다랑 같아요!']]},
+];
+const TECH=[
+ {w:'점검하다',ask:'공연 전이에요. 마이크가 잘 되는지 하나씩 봐요. 마이크를 ___.',opts:[['점검해요',1],['전공해요',0,'전공은 대학교에서 공부하는 것이에요. 잘 되는지 봐요 → "점검해요".'],['수리해요',0,'수리는 고장 난 걸 고쳐요. 아직 안 고장 났어요! → "점검해요".']]},
+ {w:'점검하다',ask:'"점검"하고 "전공", 소리가 비슷해요. 대학교에서 공부하는 것은?',opts:[['전공',1],['점검',0,'점검은 잘 되는지 하나씩 봐요. 대학교 공부 → "전공".']]},
+ {w:'점검하다',ask:'개발자도 점검해요! 개발자는 뭘 점검해요?',opts:[['코드',1],['사과',0,'😄 사과는 과수원 주인이 봐요. 개발자는 → "코드".']]},
+];
+const MC=[
+ {w:'발음',ask:'"따"하고 "봐"는 입에서 나오는 소리가 달라요. ___이 달라요.',opts:[['발음',1],['발',0,'발은 걸을 때 써요! 🦶 소리 → "발음".'],['사투리',0,'사투리는 지역 말이에요. 소리 → "발음".']]},
+ {w:'발음',ask:'"제 발음이 조금 나빠요." 뭐가 나빠요?',opts:[['말하는 소리',1],['걷는 발',0,'😄 발이 아니에요! 말하는 소리예요.']]},
+ {w:'발음',ask:'"발음"은 어떻게 읽어요? 바 + ___',opts:[['름',1],['람',0,'ㄹ이 뒤로 가요. 바 + "름" → 발음!']]},
+ {w:'발음',ask:'부산 사람은 서울 사람하고 말이 조금 달라요. 지역 말은 ___예요.',opts:[['사투리',1],['발음',0,'발음은 말하는 소리예요. 지역 말 → "사투리".']]},
+];
+const SKY=[
+ {w:'홍수',ask:'비가 아주 많이 와요. 강물이 넘쳐요. 그건 ___예요.',opts:[['홍수',1],['첫눈',0,'첫눈은 그해 처음 오는 눈이에요. 물이 넘쳐요 → "홍수".'],['연못',0,'연못은 물이 고인 작은 못이에요. 물이 넘쳐요 → "홍수".']]},
+ {w:'홍수',ask:'비가 많이 ___ 홍수가 없었어요.',opts:[['왔는데',1],['와서',0,'"와서"는 이유예요: 비가 와서 홍수가 났어요. 반대 이야기 → "왔는데".']]},
+ {w:'첫눈',ask:'그해 처음 오는 눈은 ___이에요.',opts:[['첫눈',1],['눈물',0,'눈물은 울 때 나와요. 😢 처음 오는 눈 → "첫눈".']]},
+ {w:'첫눈',ask:'10월이에요. 눈이 ___ 안 왔어요.',opts:[['아직',1],['벌써',0,'벌써는 생각보다 빨라요. 안 왔어요 → "아직".']]},
+ {w:'기대하다',ask:'좋은 일을 바라고 기다려요. 내일 축제를 ___.',opts:[['기대해요',1],['기억해요',0,'기억은 옛날 일을 안 잊어요. 앞으로 좋은 일 → "기대해요".']]},
+ {w:'기대하다',ask:'버스가 안 와요. 정류장에서 버스를 ___.',opts:[['기다려요',1],['기대해요',0,'버스는 그냥 기다려요. 😄 좋은 일, 설레는 마음 → "기대해요".']]},
+];
+const REF=[
+ {w:'대회',ask:'여러 사람이 누가 제일 잘하는지 겨뤄요. 이건 양궁 ___예요.',opts:[['대회',1],['대학',0,'대학은 학교예요. 누가 잘하는지 겨뤄요 → "대회".'],['축제',0,'축제는 즐겁게 노는 날이에요. 누가 이기는지 → "대회".']]},
+ {w:'받다',ask:'1등이에요! 트로피를 ___.',opts:[['받았어요',1],['이겼어요',0,'이기다는 경기에 써요. 대회를 이겼어요. 트로피는 → "받았어요".']]},
+ {w:'받다',ask:'"이기다"는 어디에 써요?',opts:[['경기, 대회',1],['트로피, 메달',0,'트로피, 메달은 받아요. 경기, 대회는 이겨요!']]},
+];
+
+CARTRIDGES.push({
+ id:'c8', n:'8편', title:'가을 축제', color:'#D97B2B', save:'daneo-maul-v8',
+ words:[['기분','mood, feeling'],['따다','to pick'],['흔들리다','to sway, shake'],['손해','loss'],['잉어','carp'],['튀다','to splash'],['바뀌다','to be changed'],['점검하다','to inspect'],['발음','pronunciation'],['홍수','flood'],['첫눈','first snow'],['기대하다','to look forward to'],['대회','competition'],['받다','to receive']],
+ start:{x:12,y:13,dir:'up'},
+ fresh:{stage:0},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['<b>기분</b>(마음) · 기본(처음, 쉬운 것)','사과를 <b>따요</b> 🍎 · 눈으로 봐요 👀 · 손해를 봐요','나무가 <b>흔들려요</b> · 일이 힘들어요','물이 <b>튀어요</b> · 잉어가 뛰어요','형이 바꿨어요 · 잉어킹이 <b>바뀌었어요</b>','마이크를 <b>점검해요</b> · 대학교 전공','<b>발음</b> = 바름 · 발 🦶 · 사투리','비가 왔는데 <b>홍수</b>가 없었어요','<b>첫눈</b>을 <b>기대해요</b> · 버스를 기다려요','<b>대회</b>를 이겨요 · 트로피를 <b>받아요</b>'],
+ intro:['단어 마을 8편! 오늘은 가을 축제예요. 🍂🎪','바람이 불고, 날씨가 좋아요.','먼저 안내 텐트에 가서 진행자를 만나요.'],
+ done:['축하해요! 배지 열네 개를 다 모았어요! 🎉','기분, 따다, 흔들리다, 손해, 잉어, 튀다, 바뀌다, 점검하다, 발음, 홍수, 첫눈, 기대하다, 대회, 받다!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열네 개! 모든 단어가 완벽해요!','가을 축제 1등이에요! 🏆'],
+
+ quest(){
+  if(state.stage===0)return {text:'🎪 안내 텐트에 가서 진행자를 만나요.'};
+  if(state.stage===1){const n=done();return n<SOURCES.length?{text:`🍂 축제 사람들을 도와요! ${n}/${SOURCES.length}`}:{late:true,text:'🏹 다 도와줬어요! 진행자한테 말해요.'}}
+  if(state.stage===2)return {late:true,text:'🎯 양궁장 ✕ 표시에 서세요. 대회 시작!'};
+  return null;
+ },
+ onStep(){
+  if(state.stage!==2||player.x!==4||player.y!==16)return;
+  held=null;player.dir='right';
+  openDialog('심판',[
+   {say:'선수님, 준비됐어요? 과녁을 보세요! 🎯'},
+   REF[0],
+   {say:'첫 번째 화살… 슝! 🏹'},
+   {who:'관중',say:'10점이에요! 와아!'},
+   {say:'두 번째 화살… 슝! 🏹'},
+   {who:'관중',say:'바람이 불어요! 화살이 조금 흔들려요… 9점!'},
+   {say:'마지막 화살… 슝! 🏹'},
+   {who:'관중',say:'10점! 가운데예요! 🎯'},
+   {say:'당신이 대회를 이겼어요! 1등이에요! 🏆'},
+   REF[1],REF[2],
+   {say:'자, 트로피예요! 축하해요! 🏆',award:['대회','받다'],set:go(3)},
+   {who:'당신',say:'트로피를 받았어요! 기분이 좋아요!'},
+   {who:'진행자',say:'단어 마을 가을 축제, 양궁 대회 1등! 정말 멋져요! 👏'}]);
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'A':{tile:'appleTree'},'a':{tile:'fallen',walk:1},'W':{tile:'wood',walk:1},'S':{tile:'speaker'},'H':{tile:'tent'},
+  '~':{tile:'pond'},'b':{tile:'bench'},'_':{tile:'sand',walk:1},'O':{tile:'target'},'x':{tile:'mark',walk:1},'p':{tile:'sign'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.A.A.A.A.......SWWWWWS..T",
+"T..a...a........WWWWWWW..T",
+"T.A.A.A.A.......WWWWWWW..T",
+"T....a...a..,..p.,,,,,...T",
+"T.A.A.A.A...,..*...,....*T",
+"T..a........,p.....,.....T",
+"T,,,,,,,,,,,,,,,,,,,,,,,,T",
+"T...........,............T",
+"T..~~~~~.*HHHHH...HHHHH..T",
+"Tb.~~~~~..HHHHH...HHHHH..T",
+"T..~~~~~....,...........*T",
+"T,,,,,,,,,,,,,,,,,,,,,,,,T",
+"T..,......p.,............T",
+"T....________________O...T",
+"T..,x________________O...T",
+"T..,.________________O...T",
+"T.............*.......*..T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '13,7':['표지판','단어 마을 가을 축제! 🍂 배지 열네 개를 모아요.'],
+ '15,5':['표지판','무대 · 오늘 저녁 공연! 🎤'],
+ '10,14':['표지판','양궁장 · 오늘 양궁 대회가 있어요. 🏹'],
+ },
+ things:{
+  T:sayAt(...TREES),
+  A:sayAt('사과나무예요. 빨간 사과가 많아요. 🍎','바람에 가지가 흔들려요. 🍃','사과가 높이 있어요. 따기 어려워요!'),
+  a:sayAt('땅에 사과가 떨어졌어요. 😢','어젯밤 바람 때문에 떨어졌어요.'),
+  S:sayAt('큰 스피커예요. 🔊','스피커에서 "하나, 둘, 셋!" 소리가 나요.'),
+  H:sayAt('축제 텐트예요. 🎪','텐트에서 맛있는 냄새가 나요.','텐트 위 깃발이 바람에 흔들려요.'),
+  O:sayAt('과녁이에요. 가운데가 10점이에요. 🎯','과녁에 화살 자국이 많아요.'),
+  b:()=>[{say:'벤치예요. 할아버지가 자주 앉아요.'}],
+  '~':sayAt('연못이에요. 잉어가 퐁당퐁당 뛰어요. 🐟','레드 리버는 아니에요. 😄','빨간 잉어가 보여요. 잉어킹은 아니에요… 아마도.','잉어가 뛰어서 물이 튀어요! 💦'),
+ },
+
+ npcs:[
+ {id:'host',name:'진행자',x:12,y:12,dir:'down',still:1,look:{hair:'#3B2A22',skin:'#F3D0B0',shirt:'#D97B2B',pants:'#2E3548',cap:'#F2C94C'},badge:['기분'],
+  after:'축제 재미있어요? 🍂',
+  pool:HOST,
+  status:()=>(state.stage===1&&done()<SOURCES.length)||state.stage===2?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [
+    {say:'어서 와요! 단어 마을 가을 축제예요! 🍂🎪'},
+    HOST[0],HOST[1],
+    {say:'좋아요! 축제 배지를 받으세요.',award:['기분'],set:go(1)},
+    {say:'그런데 오늘 축제에 문제가 많아요. 😅'},
+    {say:'과수원, 연못, 무대에 가 보세요. 다섯 명을 도와주세요!'},
+    {say:'다 도와주면, 양궁 대회에 나갈 수 있어요. 🏹'}];
+   if(state.stage===1&&done()<SOURCES.length)return [{say:`지금 ${done()}명 도와줬어요. 다섯 명 다 도와주세요!`}];
+   if(state.stage===1)return [
+    {say:'다 도와줬어요? 고마워요! 😊'},
+    HOST[2],
+    {say:'이제 양궁 대회 시간이에요! 양궁장 ✕ 표시에 서세요. 🎯',set:go(2)}];
+   if(state.stage===2)return [{say:'양궁장 ✕ 표시에 서세요! 대회가 곧 시작해요. 🏹'}];
+   return null;
+  }},
+ {id:'farmer',name:'과수원 주인',x:5,y:7,dir:'down',look:{hair:'#5A3A22',skin:'#E8B98F',shirt:'#3FA86B',pants:'#5A3A22',cap:'#D9544B'},badge:['따다','흔들리다','손해'],
+  after:'사과 주스 맛있게 드세요! 🍎',
+  pool:FARM,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'아이고, 큰일이에요… 🍎'}]:null,
+  talk:[
+   {say:'어서 와요. 저는 과수원 주인이에요. 🍎'},
+   {say:'어젯밤에 바람이 아주 많이 불었어요.'},
+   FARM[0],FARM[1],
+   {say:'사과가 많이 떨어졌어요. 땅에 있는 사과는 팔 수 없어요.'},
+   FARM[2],FARM[3],
+   {say:'그래도 나무에 사과가 아직 있어요. 같이 따요!'},
+   FARM[4],FARM[5],FARM[6],
+   {say:'와, 사과를 많이 땄어요! 사과 주스를 만들 수 있어요! 🧃',award:['따다','흔들리다','손해']}]},
+ {id:'kid',name:'아이',x:5,y:13,dir:'up',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#5B8BD9',pants:'#3A3F55',cap:'#F2C94C'},badge:['잉어','튀다','바뀌다'],
+  after:'잉어킹 최고! 🐟',
+  pool:POND,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'쉿! 물고기 보고 있어요. 🐟'}]:null,
+  talk:[
+   {say:'안녕하세요! 연못 좀 봐요! 🐟'},
+   POND[0],POND[1],
+   {say:'저는 잉어킹을 좋아해요. 조금 약해요. 근데 강한 포켓몬으로 바뀌어요!'},
+   POND[4],POND[5],
+   {who:'…',say:'퐁당! 잉어가 높이 뛰었어요! 💦'},
+   POND[2],POND[3],
+   {say:'옷이 다 젖었어요. 😆 그래도 재미있어요!',award:['잉어','튀다','바뀌다']}]},
+ {id:'tech',name:'음향 기사',x:17,y:2,dir:'down',look:{hair:'#1E1E24',skin:'#DDAE85',shirt:'#2E3548',pants:'#2E3548',cap:'#2E3548'},badge:['점검하다'],
+  after:'소리 좋아요! 🔊',
+  pool:TECH,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'지금 바빠요. 공연 준비 중이에요. 🔊'}]:null,
+  talk:[
+   {say:'저는 음향 기사예요. 무대 소리를 만들어요. 🔊'},
+   {say:'저녁에 공연이 있어요. 그 전에 다 봐야 돼요.'},
+   TECH[0],TECH[1],
+   {say:'스피커 하나, 스피커 둘… 마이크… 다 괜찮아요!'},
+   TECH[2],
+   {say:'점검 끝! 하나, 둘, 셋! 소리 좋아요! 🎤',award:['점검하다']}]},
+ {id:'mc',name:'사회자',x:21,y:3,dir:'down',look:{hair:'#C0582E',skin:'#F3D0B0',shirt:'#F6A5B8',pants:'#3A3A48',long:1},badge:['발음'],
+  after:'발음 연습, 매일 조금씩 해요! 🗣️',
+  pool:MC,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'따, 따, 따… 아, 연습 중이에요! 🎤'}]:null,
+  talk:[
+   {say:'안녕하세요! 저는 사회자예요. 오늘 무대에서 말해요. 🎤'},
+   {say:'그래서 아침부터 연습해요. 따, 따, 따! 봐, 봐, 봐!'},
+   MC[0],MC[1],MC[2],
+   {say:'저는 부산에서 왔어요. 그래서 말이 조금 달라요.'},
+   MC[3],
+   {say:'"안녕하세요, 여러분! 단어 마을 가을 축제입니다!" 어때요? 😊',award:['발음']}]},
+ {id:'grandpa',name:'할아버지',x:2,y:11,dir:'right',still:1,look:{hair:'#E8E8EE',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#5A3A22'},badge:['홍수','첫눈','기대하다'],
+  after:'첫눈 오면 같이 봐요. ❄️',
+  pool:SKY,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'허허, 날씨 좋다… ☀️'}]:null,
+  talk:[
+   {say:'허허, 어서 와요. 나는 날씨를 잘 알아요. ☀️'},
+   {say:'지난주에 비가 정말 많이 왔어요. 연못이 넘칠 뻔했어요.'},
+   SKY[0],SKY[1],
+   {say:'이제 가을이에요. 곧 추워질 거예요. ❄️'},
+   SKY[2],SKY[3],
+   {say:'11월에 첫눈이 올 거예요. 나는 첫눈이 좋아요!'},
+   SKY[4],SKY[5],
+   {say:'모든 계절이 좋아요. 그래도 첫눈은 특별해요. 😊',award:['홍수','첫눈','기대하다']}]},
+ {id:'ref',name:'심판',x:3,y:15,dir:'right',still:1,look:{hair:'#1F1F1F',skin:'#E8B98F',shirt:'stripe',pants:'#1F1F1F'},badge:['대회','받다'],
+  after:'트로피 축하해요! 🏆',
+  pool:REF,
+  status:()=>state.stage<2?'wait':undefined,
+  script:()=>{
+   if(state.stage<2)return [{say:'양궁 대회는 이따가 시작해요! 🏹'},{say:'먼저 축제 사람들을 도와주세요.'}];
+   if(state.stage===2)return [{say:'선수님! 왼쪽 ✕ 표시에 서세요. 과녁을 보고 쏴요! 🎯'}];
+   return null;
+  }},
+ {id:'seller',name:'호떡 아저씨',x:20,y:12,dir:'down',still:1,look:{hair:'#2B1E1A',skin:'#DDAE85',shirt:'#F4F4F4',pants:'#5A3A22'},
+  talk:[{say:'호떡 사세요! 따뜻하고 달아요. 🥞'},{say:'과수원 사과 주스도 있어요. 축제에서만 팔아요!'}]},
+ {id:'fan',name:'관중',x:9,y:18,dir:'up',look:{hair:'#5A3A22',skin:'#F1C9A5',shirt:'#F2C94C',pants:'#333',long:1},
+  talk:[{say:'양궁 대회 기대돼요! 🏹'},{say:'어렸을 때 양궁 해 봤어요? 저는 한 번도 안 해 봤어요.'}]},
+ ],
+});
+})();
+</script>
+<script>
+/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */
+/* =====================================================================
+   카트리지 9편 · 황사 오는 날
+   Content only — the engine draws, moves and runs dialogue. (Format notes: see 1편.)
+   Built from the player's Anki "다시 봐야 하는 한국어 카드" (Oct 6): 문을 잠갔어요, 황사가 봄마다 와요,
+   나무 주위에서 놀고 있어요, 집값이 비싸지고 있어, 저 사람은 저의 동생이에요, 더 가난해요, 전쟁…
+   Story: yellow dust is coming. Help four people, find your 동생 by the big tree, go home and lock the door on the ✕.
+   state.stage: 0 start · 1 helping · 2 find 동생 · 3 go home ✕ · 4 done
+   ===================================================================== */
+(L=>{if(!L)return;
+ const d={
+  '황사':{k:'봄에 중국에서 오는 노란 모래 바람이에요.',e:'yellow dust'},
+  '미세먼지':{k:'공기 속 아주 작은 먼지예요. 눈에 안 보여요.',e:'fine dust'},
+  '마스크':{k:'입하고 코를 가리는 거예요.',e:'mask'},
+  '열쇠':{k:'문을 열고 잠글 때 쓰는 작은 쇠예요.',e:'key'},
+  '닫다':{k:'열린 문이나 창문을 막아요.',e:'to close'},
+  '잠그다':{k:'열쇠로 문을 못 열게 해요.',e:'to lock'},
+  '잠기다':{k:'문이 잠긴 상태가 돼요.',e:'to be locked'},
+  '주위':{k:'어떤 것의 둘레, 옆.',e:'around, surroundings'},
+  '주의':{k:'조심하는 것이에요.',e:'caution'},
+  '전쟁':{k:'나라와 나라가 싸우는 것이에요.',e:'war'},
+  '가난하다':{k:'돈이 많이 없어요.',e:'to be poor'},
+  '부자':{k:'돈이 아주 많은 사람이에요.',e:'rich person'},
+  '동생':{k:'나보다 어린 형제예요.',e:'younger sibling'},
+  '이장':{k:'마을의 대표예요.',e:'village head'},
+  '마을회관':{k:'마을 사람들이 모이는 건물이에요.',e:'village hall'},
+  '약국':{k:'약을 파는 가게예요.',e:'pharmacy'},
+  '약사':{k:'약국에서 일하는 사람이에요.',e:'pharmacist'},
+  '숨바꼭질':{k:'숨고, 찾는 놀이예요.',e:'hide-and-seek'},
+  '숨다':{k:'안 보이게 들어가 있어요.',e:'to hide'},
+  '먼지':{k:'아주 작은 흙이나 가루예요.',e:'dust'},
+  '모래':{k:'바닷가에 있는 작은 돌 가루예요.',e:'sand'},
+  '공기':{k:'우리가 숨 쉬는 것이에요.',e:'air'},
+  '둘레':{k:'어떤 것을 빙 둘러싼 곳이에요.',e:'surroundings'},
+  '안내':{k:'알려 주는 것이에요.',e:'guidance, notice'},
+  '방송':{k:'스피커나 TV로 알려요.',e:'broadcast'},
+  '벗다':{k:'옷, 모자, 마스크를 몸에서 빼요.',e:'to take off'},
+  '차다':{k:'발로 공을 쳐요.',e:'to kick'},
+  '잃어버리다':{k:'물건이 없어져요.',e:'to lose (a thing)'},
+  '콜록콜록':{k:'기침하는 소리예요.',e:'cough cough'},
+  '찰칵':{k:'문이 잠기는 소리예요.',e:'click'},
+  '가리다':{k:'안 보이게 막아요.',e:'to cover'},
+  '옆집':{k:'우리 집 옆에 있는 집이에요.',e:'house next door'},
+ };
+ for(const k in d)if(!L.defs[k])L.defs[k]=d[k];
+ const m={'잠갔어요':['잠그다'],'잠가요':['잠그다'],'잠그었어요':['잠그다'],'잠겼어요':['잠기다'],'잠갔어요\"가':['잠그다'],'잃어버렸어요':['잃어버리다'],'써요':['쓰다'],'이장님':['이장'],'이장님이':['이장'],'이장님한테':['이장'],'숨어':['숨다'],'벗어요':['벗다'],'차고':['차다'],'닫아요':['닫다'],'닫고':['닫다'],'닫았어요':['닫다'],'가난했어요':['가난하다'],'가난해요':['가난하다']};
+ for(const k in m)if(!L.map[k])L.map[k]=m[k];
+})(window.LEX);
+(()=>{
+const SOURCES=['pharm','shop','kids','grandma'];
+const done=()=>NPCS.filter(n=>SOURCES.includes(n.id)&&n.badge.every(has)).length;
+const go=n=>()=>{state.stage=n};
+const HEAD=[
+ {w:'황사',ask:'봄마다 중국에서 노란 모래 바람이 와요. 이건 ___예요.',opts:[['황사',1],['홍수',0,'홍수는 물이 넘쳐요. 노란 모래 바람 → "황사".'],['첫눈',0,'첫눈은 겨울에 처음 오는 눈이에요. 모래 바람 → "황사".']]},
+ {w:'황사',ask:'한국에는 황사가 ___ 와요. (매년 봄)',opts:[['봄마다',1],['봄에서',0,'"에서"는 장소예요. 매년 봄 → "봄마다".']]},
+ {w:'황사',ask:'황사는 어디에서 와요?',opts:[['중국에서',1],['중국에게',0,'"에게"는 사람한테 써요. 장소 → "중국에서".']]},
+ {w:'미세먼지',ask:'공기에 아주 작은 먼지가 많아요. 눈에 안 보여요. 이건 ___예요.',opts:[['미세먼지',1],['미역',0,'미역은 바다 풀이에요. 🌊 작은 먼지 → "미세먼지".']]},
+ {w:'미세먼지',ask:'오늘 미세먼지가 많아요. 밖에서 운동을 ___.',opts:[['하지 마세요',1],['하세요',0,'미세먼지는 몸에 안 좋아요. → "하지 마세요".']]},
+];
+const PH=[
+ {w:'마스크',ask:'황사가 와요. 입하고 코를 가려요. ___를 써요.',opts:[['마스크',1],['모자',0,'모자는 머리에 써요. 입하고 코 → "마스크".']]},
+ {w:'마스크',ask:'마스크를 ___.',opts:[['써요',1],['입어요',0,'옷은 입어요. 마스크, 모자, 안경은 "써요".'],['신어요',0,'신발은 신어요. 👟 마스크는 "써요".']]},
+ {w:'마스크',ask:'집에 와서 마스크를 ___.',opts:[['벗어요',1],['꺼요',0,'불이나 TV는 꺼요. 마스크는 "벗어요".']]},
+];
+const SH=[
+ {w:'열쇠',ask:'문을 열 때 쓰는 작은 쇠예요. 🔑 이건 ___예요.',opts:[['열쇠',1],['열심',0,'열심히는 아주 노력해요. 문 → "열쇠".']]},
+ {w:'열쇠',ask:'열쇠가 없어요! 열쇠를 ___.',opts:[['잃어버렸어요',1],['잊어버렸어요',0,'잊다는 머리에서 없어져요. 물건이 없어졌어요 → "잃어버렸어요".']]},
+ {w:'닫다',ask:'바람이 들어와요. 열쇠 없이 그냥 창문을 ___.',opts:[['닫아요',1],['잠가요',0,'잠그다는 열쇠로 해요. 🔑 그냥 → "닫아요".']]},
+ {w:'닫다',ask:'"닫다"의 반대는?',opts:[['열다',1],['잠그다',0,'잠그다는 열쇠로 못 열게 해요. 반대 → "열다".']]},
+];
+const KID=[
+ {w:'주위',ask:'아이들이 나무 ___에서 놀아요. (나무 둘레)',opts:[['주위',1],['위',0,'위는 나무 꼭대기예요! 🌳 둘레 → "주위".'],['주의',0,'주의는 조심해요. 소리가 비슷해요! 둘레 → "주위".']]},
+ {w:'주위',ask:'"주위"하고 "주의", 조심하는 말은?',opts:[['주의',1],['주위',0,'주위는 둘레예요. 조심 → "주의". 황사 주의!']]},
+ {w:'-고 있다',ask:'지금 아이들이 나무 주위에서 ___. (지금 하는 중)',opts:[['놀고 있어요',1],['놀았어요',0,'"놀았어요"는 끝났어요. 지금 → "놀고 있어요".']]},
+ {w:'-고 있다',ask:'집값이 계속 비싸지___ 있어. (지금도 계속)',opts:[['고',1],['서',0,'지금 계속 바뀌어요 → "비싸지고 있어".']]},
+ {w:'-고 있다',ask:'동생은 지금 뭐 해요? 공을 ___.',opts:[['차고 있어요',1],['차고 싶어요',0,'"싶어요"는 원해요. 지금 하는 중 → "차고 있어요".']]},
+];
+const GM=[
+ {w:'전쟁',ask:'나라와 나라가 싸워요. 그건 ___이에요.',opts:[['전쟁',1],['시합',0,'시합은 운동 경기예요. 나라가 싸워요 → "전쟁".'],['선거',0,'선거는 투표해요. 나라가 싸워요 → "전쟁".']]},
+ {w:'전쟁',ask:'옛날에 전쟁이 있었어요. 그때는 ___.',opts:[['힘들었어요',1],['재미있었어요',0,'전쟁은 무섭고 슬퍼요. → "힘들었어요".']]},
+ {w:'가난하다',ask:'돈이 많이 없어요. 그 사람은 ___.',opts:[['가난해요',1],['가늘어요',0,'가늘다는 얇아요. 돈이 없어요 → "가난해요".']]},
+ {w:'가난하다',ask:'우리 집은 옆집___ 더 가난했어요.',opts:[['보다',1],['처럼',0,'"처럼"은 같아요. 비교해요 → "보다".']]},
+ {w:'부자',ask:'돈이 아주 많은 사람은 ___예요.',opts:[['부자',1],['부모',0,'부모는 엄마, 아빠예요. 돈이 많아요 → "부자".']]},
+ {w:'부자',ask:'"가난한 사람"의 반대는?',opts:[['부자',1],['바쁜 사람',0,'바쁘다는 시간이 없어요. 돈이 많아요 → "부자".']]},
+];
+const SIB=[
+ {w:'동생',ask:'나보다 어린 형제는 ___이에요.',opts:[['동생',1],['형',0,'형은 나보다 나이가 많아요. 어려요 → "동생".']]},
+ {w:'동생',ask:'친구한테 소개해요. "저 사람은 저의 ___."',opts:[['동생이에요',1],['동생이 있어요',0,'"있어요"는 가지고 있어요. 소개할 때 → "동생이에요".']]},
+ {w:'잠그다',ask:'집에 들어왔어요. 황사가 들어오면 안 돼요! 열쇠로 문을 ___.',opts:[['잠갔어요',1],['잠그었어요',0,'잠그다 → "잠가요", "잠갔어요". ㅡ가 빠져요!'],['닫았어요',0,'닫다는 그냥 닫아요. 열쇠로 → "잠갔어요".']]},
+ {w:'잠그다',ask:'잠그 + 아요 = ?',opts:[['잠가요',1],['잠그아요',0,'ㅡ가 빠져요 → "잠가요". 쓰다 → 써요하고 같아요!']]},
+ {w:'잠그다',ask:'저는 문을 ___. 이제 안전해요. (내가 했어요)',opts:[['잠갔어요',1],['잠겼어요',0,'잠기다는 문이 그렇게 돼요. 내가 했어요 → "잠갔어요".']]},
+];
+
+CARTRIDGES.push({
+ id:'c9', n:'9편', title:'황사 오는 날', color:'#B8923A', save:'daneo-maul-v9',
+ words:[['황사','yellow dust'],['미세먼지','fine dust'],['마스크','mask'],['열쇠','key'],['닫다','to close'],['주위','around'],['-고 있다','be ~ing'],['전쟁','war'],['가난하다','to be poor'],['부자','rich person'],['동생','younger sibling'],['잠그다','to lock']],
+ start:{x:12,y:11,dir:'up'},
+ fresh:{stage:0},
+ help:'사람 앞에서 <b>A</b>. 머리 위 <span class="k">!</span> 새 단어 · <span class="k">?</span> 복습해서 <span class="k">★</span> 받기',
+ tips:['봄마다 <b>황사</b>가 와요 · 홍수는 물','<b>미세먼지</b>가 많으면 밖에서 운동하지 마세요','<b>마스크</b>를 써요 · 옷은 입어요 · 벗어요','<b>열쇠</b> 🔑 · 잃어버리다(물건) · 잊어버리다(머리)','<b>닫다</b> ↔ 열다 · <b>잠그다</b>는 열쇠로','잠그 + 아요 → <b>잠가요</b> · <b>잠갔어요</b>','나무 <b>주위</b>(둘레) · 주의(조심)','놀<b>고 있어요</b> = 지금 하는 중','<b>전쟁</b> · 시합 · 선거','<b>가난하다</b> ↔ <b>부자</b> · 옆집<b>보다</b> 더','<b>동생</b>(어려요) · 형, 누나, 오빠, 언니(많아요)'],
+ intro:['단어 마을 9편! 봄이에요. 🌸','그런데 하늘이 노래요… 😷','마을회관 앞에 이장님이 있어요. 가 보세요.'],
+ done:['축하해요! 배지 열두 개를 다 모았어요! 🎉','황사, 미세먼지, 마스크, 열쇠, 닫다, 주위, -고 있다, 전쟁, 가난하다, 부자, 동생, 잠그다!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'],
+ perfect:['★ 열두 개! 모든 단어가 완벽해요!','황사도 이겼어요! 😷💪'],
+
+ quest(){
+  if(state.stage===0)return {text:'📢 마을회관 앞에 가서 이장님을 만나요.'};
+  if(state.stage===1){const n=done();return n<SOURCES.length?{text:`😷 황사가 와요! 사람들을 도와요. ${n}/${SOURCES.length}`}:{late:true,text:'📢 다 도와줬어요! 이장님한테 말해요.'}}
+  if(state.stage===2)return {late:true,text:'🌳 동생을 찾아요! 큰 나무 주위에 있어요.'};
+  if(state.stage===3)return {late:true,text:'🏠 집 문 앞 ✕ 에 서세요.'};
+  return null;
+ },
+ onStep(){
+  if(state.stage!==3||player.x!==19||player.y!==15)return;
+  held=null;player.dir='up';
+  openDialog('동생',[
+   {say:'집에 왔어요! 빨리 들어가요! 🏠'},
+   {who:'당신',say:'들어가자! 창문도 다 닫았어요.'},
+   SIB[2],
+   {who:'…',say:'찰칵! 🔒'},
+   SIB[3],
+   {say:'이제 황사가 못 들어와요. 안전해요! 😊',award:['잠그다'],set:go(4)},
+   {say:'마스크 벗어도 돼요? 와, 시원해요!'},
+   {who:'이장',say:'(안내 방송) 황사가 끝나면 다시 알려 드릴게요. 모두 집에 계세요! 📢'}]);
+ },
+
+ legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+  'M':{tile:'schoolWall'},'P':{tile:'centerWall'},'S':{tile:'shopWall'},'H':{tile:'brick'},'D':{tile:'domeDoor'},
+  'x':{tile:'mark',walk:1},'~':{tile:'pond'},'b':{tile:'bench'},'p':{tile:'sign'},'B':{tile:'bigTree'}},
+ map:["TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.MMMMMMM.......PPPPPP...T",
+"T.MMMMMMM.......PPPPPP...T",
+"T.MMMMMMM.......PPPPPP...T",
+"T....p..,.........,..p...T",
+"T,,,,,,,,,,,,,,,,,,,,,,,,T",
+"T...........,...........*T",
+"T..*.......BB............T",
+"T..........BB....*.......T",
+"T.....,..........,.......T",
+"T.SSSSSS..,..p.....,.....T",
+"T.SSSSSS..,......HHHHHH..T",
+"T.SSSSSS..,......HHHHHH..T",
+"T...,.....,......HHDHHH..T",
+"T,,,,,,,,,,,,,,,,,,x,,,,,T",
+"T..~~~~.b................T",
+"T..~~~~..........*.......T",
+"T.....*..................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+
+ signs:{
+ '5,5':['표지판','마을회관 · 오늘 오후 황사 주의! 📢'],
+ '21,5':['표지판','약국 · 마스크 있어요 😷'],
+ '13,11':['표지판','큰 나무 · 마을에서 제일 오래된 나무예요. 🌳'],
+ },
+ things:{
+  T:sayAt(...TREES),
+  B:sayAt('큰 나무예요. 마을에서 제일 오래된 나무예요. 🌳','나무가 아주 커요. 아이들이 나무 주위에서 놀아요.','나뭇잎에 노란 먼지가 있어요. 황사 때문이에요. 😷'),
+  M:sayAt('마을회관이에요. 마을 사람들이 모여요.','지붕 위에 스피커가 있어요. 안내 방송을 해요. 📢'),
+  P:sayAt('약국이에요. 약하고 마스크를 팔아요. 💊','창문에 "마스크 있어요" 종이가 있어요.'),
+  S:sayAt('작은 가게예요. 과자하고 우유를 팔아요. 🛒','가게 창문에 노란 먼지가 많아요.'),
+  H:sayAt('우리 집이에요. 빨간 벽돌집이에요. 🏠','창문이 열려 있어요. 빨리 닫아야 해요!'),
+  D:()=>[{say:'우리 집 문이에요. 🚪'}],
+  '~':sayAt('연못이에요. 물 위에 노란 먼지가 있어요. 😢','오리가 없어요. 오리도 집에 갔어요.'),
+  b:()=>[{say:'벤치예요. 벤치 위에 노란 먼지가 있어요.'}],
+ },
+
+ npcs:[
+ {id:'head',name:'이장',x:7,y:5,dir:'down',still:1,look:{hair:'#E8E8EE',skin:'#E8B98F',shirt:'#3E7F4A',pants:'#2E3548'},badge:['황사','미세먼지'],
+  after:'황사 날에는 집에 있어요. 📢',
+  pool:HEAD,
+  status:()=>(state.stage===1&&done()<SOURCES.length)||state.stage===2?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [
+    {say:'어서 와요. 나는 이 마을 이장이에요. 📢'},
+    {say:'하늘 좀 봐요. 노래요. 바람에 모래가 있어요.'},
+    HEAD[0],HEAD[1],
+    {say:'그리고 공기에 작은 먼지도 많아요.'},
+    HEAD[3],HEAD[4],
+    {say:'잘 알아요! 이 배지를 받으세요.',award:['황사','미세먼지'],set:go(1)},
+    {say:'오늘 오후에 황사가 많이 와요. 마을 사람들이 걱정해요.'},
+    {say:'약국, 가게, 큰 나무, 연못에 가 보세요. 네 명을 도와주세요!'}];
+   if(state.stage===1&&done()<SOURCES.length)return [{say:`지금 ${done()}명 도와줬어요. 네 명 다 도와주세요!`}];
+   if(state.stage===1)return [
+    {say:'다 도와줬어요? 고마워요! 😊'},
+    HEAD[2],
+    {say:'그런데… 아직 밖에 아이가 있어요!'},
+    {say:'당신 동생이에요! 큰 나무 주위에 있어요. 빨리 가 보세요! 🌳',set:go(2)}];
+   if(state.stage===2)return [{say:'큰 나무 주위에 동생이 있어요! 빨리요! 🌳'}];
+   return null;
+  }},
+ {id:'pharm',name:'약사',x:18,y:5,dir:'down',look:{hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#F4F4F4',pants:'#4F7BD6',long:1},badge:['마스크'],
+  after:'밖에서는 꼭 마스크 쓰세요! 😷',
+  pool:PH,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'지금 바빠요. 마스크 정리 중이에요. 😷'}]:null,
+  talk:[
+   {say:'어서 오세요. 여기는 약국이에요. 저는 약사예요. 💊'},
+   {say:'오늘 황사가 와요. 사람들이 마스크를 많이 사요.'},
+   PH[0],PH[1],
+   {say:'자, 마스크 두 개 줄게요. 하나는 동생 거예요.'},
+   PH[2],
+   {say:'잘했어요! 밖에서는 꼭 쓰세요. 😷',award:['마스크']}]},
+ {id:'shop',name:'가게 주인',x:5,y:10,dir:'down',look:{hair:'#3B2A22',skin:'#DDAE85',shirt:'#3E7F78',pants:'#2E3548',cap:'#2E3548'},badge:['열쇠','닫다'],
+  after:'열쇠는 꼭 주머니에! 🔑',
+  pool:SH,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'어서 오세요! 과자 있어요. 🛒'}]:null,
+  talk:[
+   {say:'아이고, 큰일이에요! 🔑'},
+   {say:'황사 때문에 가게 문을 일찍 닫아요. 그런데…'},
+   SH[0],SH[1],
+   {say:'아, 여기 있어요! 주머니 안에 있었어요. 😅'},
+   SH[2],SH[3],
+   {say:'고마워요! 이제 가게 문을 닫고 집에 가요.',award:['열쇠','닫다']}]},
+ {id:'kids',name:'아이',x:10,y:9,dir:'right',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#F2C94C',pants:'#3A3F55',long:1},badge:['주위','-고 있다'],
+  after:'숨바꼭질 또 해요! 🙈',
+  pool:KID,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'쉿! 숨바꼭질하고 있어요. 🙈'}]:null,
+  talk:[
+   {say:'안녕하세요! 우리는 숨바꼭질하고 있어요! 🙈'},
+   KID[0],KID[1],
+   {say:'저기 봐요! 친구들이 나무 뒤에 숨어 있어요.'},
+   KID[2],KID[3],
+   {say:'네? 황사가 와요? 알았어요. 엄마한테 갈게요! 🏃',award:['주위','-고 있다']}]},
+ {id:'grandma',name:'할머니',x:9,y:16,dir:'left',still:1,look:{hair:'#D8D8E0',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#5A3A22',long:1},badge:['전쟁','가난하다','부자'],
+  after:'할머니 이야기 또 들으러 와요. 👵',
+  pool:GM,
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'허허, 하늘이 노랗네… 🌸'}]:null,
+  talk:[
+   {say:'어서 와요. 할머니가 옛날 이야기 해 줄게요. 👵'},
+   {say:'옛날에는 하늘이 아주 파랬어요.'},
+   GM[0],GM[1],
+   {say:'그때 우리 집은 돈이 없었어요. 밥도 조금 먹었어요.'},
+   GM[2],GM[3],
+   {say:'지금은 부자는 아니에요. 그래도 행복해요. 😊'},
+   GM[4],GM[5],
+   {say:'자, 황사 와요. 할머니도 집에 갈게요. 고마워요!',award:['전쟁','가난하다','부자']}]},
+ {id:'sib',name:'동생',get x(){return state&&state.stage>=3?20:13},get y(){return state&&state.stage>=3?15:9},dir:'left',look:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#D9544B',pants:'#2E3548',cap:'#F2C94C'},badge:['동생','잠그다'],
+  after:'집이 제일 좋아요! 🏠',
+  pool:SIB,
+  status:()=>state.stage<2||state.stage===3?'wait':undefined,
+  script:()=>{
+   if(state.stage<2)return [{say:'지금 공을 차고 있어요! 나중에 와요. ⚽'}];
+   if(state.stage===2)return [
+    {say:'어? 왜 왔어요? 지금 놀고 있어요! ⚽'},
+    {who:'당신',say:'황사가 와요! 집에 가야 돼요.'},
+    SIB[0],
+    {who:'아이',say:'이 사람 누구예요?'},
+    SIB[1],
+    {who:'당신',say:'자, 마스크 써요. 약국에서 받았어요. 😷'},
+    {say:'고마워요! 같이 집에 가요!',award:['동생'],set:go(3)},
+    {who:'…',say:'동생이 집으로 먼저 뛰어가요. 🏃'}];
+   if(state.stage===3)return [{say:'빨리 와요! 문 앞 ✕ 에 서요! 🏠'}];
+   return null;
+  },
+  talk:[{say:'집이 제일 좋아요! 🏠'}]},
+ {id:'walker',name:'아저씨',x:22,y:9,dir:'down',look:{hair:'#1E1E24',skin:'#E8B98F',shirt:'#5B8BD9',pants:'#2E3548'},
+  talk:[{say:'콜록콜록! 😷 목이 아파요.'},{say:'황사 날에는 물을 많이 마셔요.'}]},
+ ],
+});
+})();
 </script>
 <script>
 /* Settings for the shared engine (walk-engine): this game's names, storage prefix and default player. 단어 마을 keeps its own art:
    the player and every villager are drawn by VILLAGE.drawChar (src/village.js), and the ! ? ★ markers by VILLAGE.marker. */
 var GAME={prefix:'daneo-maul',title:'단어 마을',log:'단어 마을',hud:'배지',
- term:{allWords:()=>[]},  // the cartridge's own celebration (DONE) says it when the last badge is in
+ term:{allWords:()=>[]},  // each cartridge's own celebration (done) says it when the last badge is in
  player:{hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#D9544B',pants:'#2E3548',cap:'#D9544B',draw:VILLAGE.drawChar},
- marker:VILLAGE.marker};
+ marker:VILLAGE.marker,
+ /* a cartridge's tips and news sources go in the 배지 sheet */
+ onBoot:(CH,C)=>{const $=id=>document.getElementById(id),esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  $('tips').innerHTML=(C.TIPS||[]).map(t=>`<li>${t}</li>`).join('');$('tipsH').hidden=!(C.TIPS||[]).length;  // tips are the cartridge's own markup (<b>)
+  $('srcList').innerHTML=(C.SOURCES||[]).map(([t,u,site])=>`<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t)}</a><small>${esc(site)}</small></li>`).join('');
+  $('srcH').hidden=!(C.SOURCES||[]).length}};
+/* links and habits from the old engine: ?편=5 opens 5편, and the last cartridge played (daneo-maul-cart) is where the game opens */
+try{const q=new URLSearchParams(location.search),p=q.get('편');
+ if(p&&!q.get('ch')){q.set('ch','c'+p.replace(/\D/g,''));q.delete('편');history.replaceState(null,'','?'+q)}
+ const old=localStorage.getItem('daneo-maul-cart');if(old&&localStorage.getItem('daneo-maul-chapter')===null)localStorage.setItem('daneo-maul-chapter',old)}catch(e){}
 </script>
 <script>
-/* GENERATED from walk-engine/engine.js (32e3011) — do not edit here; edit walk-engine and run its sync.sh. */
+/* GENERATED from walk-engine/engine.js (f402244) — do not edit here; edit walk-engine and run its sync.sh. */
 /* =====================================================================
    Engine: tiles, movement, zones, dialogue, spaced review, speech, saving.
    ===================================================================== */
@@ -1066,6 +2868,7 @@ function tryMove(){
 }
 function arrive(){
  state.x=player.x;state.y=player.y;state.dir=player.dir;save();
+ if(C.onStep){C.onStep();updateQuest();save()}  // a chapter that counts steps or starts a scene on a square (단어 마을's cartridges)
  const w=warpAt(player.x,player.y);
  if(w){goZone(w.to,w.x,w.y,w.dir);return true}
  showRoom();return false;
@@ -1514,6 +3317,7 @@ let closedAt=0;
 function closeDialog(){
  closedAt=performance.now();dlg=null;camT=null;startWalks();clearInterval(typing?.id);$('dlg').hidden=true;$('dlg').classList.remove('attop');closePhone();hideGloss();if(TTS)try{speechSynthesis.cancel()}catch(e){}
  updateQuest();
+ if(C.afterTalk)C.afterTalk();  // a chapter's own check after every conversation (단어 마을: the cartridge is complete, every word is ★)
  if(pending){const c=pending;pending=null;setTimeout(()=>{if(!dlg)openDialog(LOGNAME,c)},400)}
 }
 function cancel(){
@@ -1625,7 +3429,7 @@ function updateHud(){const n=state.badges.length,st=C.WORDS.filter(w=>has(w)&&lv
 function fitReg(){const e=$('reg');if(!e)return;e.style.letterSpacing=e.style.fontSize='';const f0=parseFloat(getComputedStyle(e).fontSize);
  for(const [ls,k] of [['.08em',1],['.03em',1],['.02em',.92],['0',.86]]){if(e.scrollWidth<=e.clientWidth)return;e.style.letterSpacing=ls;e.style.fontSize=k<1?f0*k+'px':''}}
 addEventListener('resize',()=>fitReg());
-function updateQuest(){$('questTxt').textContent=C.questText()}
+function updateQuest(){$('questTxt').textContent=C.questText();$('quest').classList.toggle('late',!!(C.questLate&&C.questLate()))}  // questLate: the goal is overdue (shell CSS .quest.late)
 function updateRead(){$('readBtn').setAttribute('aria-pressed',readOn&&canSpeak()?'true':'false');$('spk').hidden=!canSpeak()}
 function updateSound(){$('sndBtn').setAttribute('aria-pressed',soundOn?'true':'false')}
 let logSel=null,showEn=false;
@@ -1819,6 +3623,7 @@ function boot(id){
  loadZone(state.zone,state.x,state.y,state.dir);
  $('chName').textContent=CH.n;
  updateHud();updateQuest();
+ if(G.onBoot)G.onBoot(CH,C);  // the game's own page parts for this chapter (단어 마을: tips, news sources)
  if(!state.seenIntro){state.seenIntro=true;save();const intro=()=>setTimeout(()=>openDialog(CH.introWho||G.title||'이야기',C.INTRO),300);if(me||!CREATOR)intro();else openMe(intro)}  // first time ever: make your character first
  else setTimeout(()=>{if(!dlg&&!panelOpen())greet()},400);  // loaded in a room whose greeting hasn't happened (reloaded mid-scene): it starts over
 }

@@ -2,7 +2,7 @@
 import fs from 'node:fs';import vm from 'node:vm';
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(x=>!x.includes('window.LEX='));
-const ctx={state:{f:{},items:[],badges:[],lv:{}},ZID:'',console};vm.createContext(ctx);
+const ctx={state:{f:{},items:[],badges:[],lv:{}},ZID:'',console,window:{LEX:{map:{},defs:{}}}};vm.createContext(ctx);
 vm.runInContext(scripts[0].replace('const CHAPTERS','var CHAPTERS'),ctx);
 for(const s of scripts.slice(1,-1))vm.runInContext(s,ctx);
 for(const CH of ctx.CHAPTERS){if(process.argv[2]&&CH.id!==process.argv[2])continue;

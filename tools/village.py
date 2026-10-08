@@ -37,3 +37,20 @@ return {{TILES,drawChar,drawDog,marker,sayAt,TREES}};
 '''
 (root/'src/village.js').write_text(out,encoding='utf-8')
 print('wrote src/village.js')
+
+# --cartridges: (re)import the cartridges themselves, one file each, verbatim (each was its own <script> in the old page) into
+# src/cartridges/cN.js. On the walk-port branch those files are the source (7편's 편집장 also reviews 보도하다), so this overwrites
+# them: use it only to bring in cartridges edited in src/daneo-maul.html, then re-apply such changes.
+import re,sys
+if '--cartridges' not in sys.argv:sys.exit(0)
+src=(root/'src/daneo-maul.html').read_text(encoding='utf-8')
+outdir=root/'src/cartridges';outdir.mkdir(exist_ok=True)
+for f in outdir.glob('c*.js'):f.unlink()
+n=0
+for m in re.finditer(r'<script>\n(.*?)</script>',src,re.S):
+    body=m.group(1)
+    if 'CARTRIDGES.push(' not in body or 'canvas + tile library' in body:continue
+    cid=re.search(r"CARTRIDGES\.push\(\{\s*id:'(c\d+)'",body).group(1)
+    (outdir/f'{cid}.js').write_text('/* GENERATED from src/daneo-maul.html by tools/village.py (trial port): this cartridge, verbatim. */\n'+body,encoding='utf-8')
+    n+=1
+print('wrote',n,'cartridges to src/cartridges/')

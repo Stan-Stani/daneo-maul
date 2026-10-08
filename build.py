@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Assemble index.html from src/ on the shared walk engine: shell + dictionary + chapter registry + 단어 마을's art + chapters + engine.
+"""Assemble index.html from src/ on the shared walk engine: shell + dictionary + chapter registry + 단어 마을's art + the cartridge
+adapter + the cartridges (src/cartridges, as written for the old engine) + game settings + engine.
 (The old single-file game is src/daneo-maul.html, built by tools/build_legacy.py, until every cartridge is ported.)"""
 import pathlib,re,sys,json
 root=pathlib.Path(__file__).parent
 shell=(root/'src/shell.html').read_text(encoding='utf-8')
-chs=sorted((root/'src/chapters').glob('c*.js'),key=lambda p:int(re.search(r'\d+',p.stem).group()))
+chs=sorted((root/'src/cartridges').glob('c*.js'),key=lambda p:int(re.search(r'\d+',p.stem).group()))  # the old cartridges, verbatim
 if '--chapters' in sys.argv: # publish only finished chapters: --chapters c1,c3
     keep=sys.argv[sys.argv.index('--chapters')+1].split(',');chs=[p for p in chs if p.stem in keep]
 lexmap=json.loads((root/'src/lexicon-map.json').read_text(encoding='utf-8')) if (root/'src/lexicon-map.json').exists() else {}
@@ -15,6 +16,7 @@ lex={'map':{k:v for k,v in lexmap.items() if any(l in alldefs and alldefs[l] for
 parts=['<script>\n/* Tap-a-word dictionary: word as written → dictionary forms, and learner definitions (lexicon/). */\nwindow.LEX='+json.dumps(lex,ensure_ascii=False,separators=(',',':'))+';\n</script>',
  '<script>\n/* Chapters register themselves here; each keeps its own save. */\nconst CHAPTERS=[];\n</script>']
 parts.append(f'<script>\n{(root/"src/village.js").read_text(encoding="utf-8")}</script>')  # 단어 마을's own tiles, people and markers
+parts.append(f'<script>\n{(root/"src/adapter.js").read_text(encoding="utf-8")}</script>')  # CARTRIDGES.push → a walk-engine chapter
 parts+=[f'<script>\n{p.read_text(encoding="utf-8")}</script>' for p in chs]
 parts.append(f'<script>\n{(root/"src/game.js").read_text(encoding="utf-8")}</script>')  # this game's settings for the shared engine
 parts.append(f'<script>\n{(root/"src/engine.js").read_text(encoding="utf-8")}</script>')
