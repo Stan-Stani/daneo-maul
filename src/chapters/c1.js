@@ -1,0 +1,139 @@
+/* 1편 · 경기장과 도장 — 단어 마을's first cartridge on the shared walk engine (trial port). Every line, the map and the people are as in
+   src/daneo-maul.html; the art is 단어 마을's own (src/village.js). What changes is the engine's: review levels instead of the one-shot ★. */
+CHAPTERS.push({id:'c1',n:'1편',title:'경기장과 도장',place:'눕다 · 떨어지다 · 놓다 · 넣다 · 시합 · 승부 · 규칙 · 심판 · 관중',words:9,save:'daneo-maul-v1',color:'#B5654A',
+ start:{zone:'village',x:8,y:9,dir:'down'},introWho:'안내',
+ /* a save from the old engine (badges + perfect): a ★ badge (no miss) becomes memory level 3, the engine's ★; a badge without ★ is
+    level 0 and due now, so its ? shows up. A finished cartridge stays finished. Runs once (f.ported). */
+ migrate:st=>{const F=st.f||(st.f={});if(F.ported)return;F.ported=1;st.lv=st.lv||{};
+  const b=st.badges||[],pf=st.perfect||[];
+  b.forEach(w=>{if(!st.lv[w])st.lv[w]=pf.includes(w)?{b:3,due:now()+GAP[3]}:{b:0,due:now()}});
+  if(st.celebrated||b.length>=9){F.allWords=1;F.done=1}},
+ make:()=>{
+const V=VILLAGE,P=look=>({...look,draw:V.drawChar});
+const WORDS=['눕다','떨어지다','놓다','넣다','시합','승부','규칙','심판','관중'];
+const DICT={
+ '눕다':{k:'몸을 바닥에 길게 대요.',e:'to lie down',ex:'아홉 시에 침대에 누울 거예요.'},
+ '떨어지다':{k:'위에서 아래로 내려가요.',e:'to fall',ex:'병이 탁자에서 떨어졌어요.'},
+ '놓다':{k:'어떤 곳에 두어요.',e:'to put on',ex:'핸드폰을 탁자에 놓았어요.'},
+ '넣다':{k:'안으로 들어가게 해요.',e:'to put in',ex:'핸드폰을 주머니에 넣었어요.'},
+ '시합':{k:'이기고 지는 경기.',e:'match',ex:'오늘은 가라테 시합이 있어요.'},
+ '승부':{k:'누가 이기고 지는지 겨루는 것.',e:'bout',ex:'시합 하나에 승부가 세 개 있어요.'},
+ '규칙':{k:'꼭 지켜야 하는 약속.',e:'rule',ex:'시합에서는 규칙을 지켜야 해요.'},
+ '심판':{k:'이기고 지는 것을 정하는 사람.',e:'referee',ex:'누가 이겼는지 심판이 말해요.'},
+ '관중':{k:'경기를 보는 사람들.',e:'spectators',ex:'경기장에 관중이 진짜 많아요.'},
+};
+/* listening review: the word against two that sound close (only with sound on) */
+const CONFUSE={'눕다':['놓다','굽다'],'떨어지다':['떨리다','떠나다'],'놓다':['넣다','낳다'],'넣다':['놓다','널다'],'시합':['시험','식당'],
+ '승부':['승리','신부'],'규칙':['규모','구석'],'심판':['신발','심부름'],'관중':['관심','감정']};
+/* every question, by who asks it, so review can reuse them. gram:1 = it tests something else (에/동안, 이/을, 경기장, 이기다↔지다):
+   asked in the conversation as before, but review asks the word's own questions */
+const Q={
+ minsu:[
+  {w:'눕다',ask:'그래서 오늘은 일찍 침대에 ___ 거예요.',opts:[['누울',1],['넣을',0,'음… 침대에 몸을 놓아요. 그건 "눕다"예요. 눕다 → 누울 거예요.'],['떨어질',0,'떨어지면 아파요! 침대에는 "눕다"예요.']]},
+  {w:'눕다',gram:1,ask:'몇 시에 누울까요? 추천해 주세요.',opts:[['아홉 시에 누우세요.',1],['아홉 시 동안 누우세요.',0,'"동안"은 얼마나 오래예요. 아홉 시간 동안! 너무 길어요. 시간은 "에"를 써요.']]}],
+ jina:[
+  {w:'떨어지다',ask:'병이 탁자에서 ___.',opts:[['떨어졌어요',1],['놓았어요',0,'병이 위에서 아래로 갔어요. 그건 "떨어지다"예요.'],['누웠어요',0,'병은 눕지 않아요! 😄 위에서 아래로 → "떨어지다".']]},
+  {w:'떨어지다',gram:1,ask:'당신도 물건을 떨어뜨린 적 있어요?',opts:[['네, 핸드폰을 떨어뜨렸어요.',1],['네, 핸드폰이 떨어뜨렸어요.',0,'"떨어뜨리다"는 내가 해요. 그래서 "핸드폰을" 떨어뜨렸어요. (핸드폰이 떨어졌어요 도 돼요!)']]}],
+ junho:[
+  {w:'놓다',ask:'핸드폰을 탁자에 ___.',opts:[['놓았어요',1],['넣었어요',0,'탁자는 위에 둬요. 위 → "놓다".']]},
+  {w:'넣다',ask:'핸드폰을 주머니에 ___.',opts:[['넣었어요',1],['놓았어요',0,'주머니는 안에 들어가요. 안 → "넣다".']]}],
+ sabeom:[
+  {w:'시합',ask:'다른 사람이랑 규칙대로 겨루는 건 뭐예요?',opts:[['시합',1],['대련',0,'대련은 연습이에요. 진짜 겨루기는 "시합"이에요.'],['관중',0,'관중은 보는 사람이에요. 겨루기는 "시합"이에요.']]},
+  {w:'시합',gram:1,ask:'축구 ___장에 가 봤어요?',opts:[['경기',1],['시합',0,'"경기장"이라고 해요. "시합장"은 안 써요.']]}],
+ ref:[
+  {w:'규칙',ask:'시합에서 지켜야 하는 건 뭐예요?',opts:[['규칙',1],['승부',0,'이건 되고, 이건 안 돼요. 그게 "규칙"이에요.'],['관중',0,'관중은 지키는 게 아니에요! 😄 "규칙"을 지켜요.']]},
+  {w:'심판',ask:'누가 이겼는지 누가 말해요?',opts:[['심판',1],['관중',0,'관중은 그냥 봐요. 결정은 심판이 해요.']]}],
+ sua:[
+  {w:'관중',ask:'관중은 누가 이겼는지 결정할 수 있어요?',opts:[['아니요, 그냥 봐요.',1],['네, 결정해요.',0,'결정은 심판이 해요. 관중은 보고 소리 질러요.']]},
+  {w:'관중',ask:'콘서트에도 ___이 있어요. 노래를 들어요.',opts:[['관중',1],['심판',0,'콘서트에 심판은 없어요! 듣는 사람들은 "관중"이에요.']]}],
+ taeo:[
+  {w:'승부',gram:1,ask:'첫 번째 승부! "이기다"의 반대는?',opts:[['지다',1],['눕다',0,'눕다는 침대에서 해요! 이기다 ↔ "지다".'],['놓다',0,'놓다는 물건을 둬요. 이기다 ↔ "지다".']]},
+  {w:'승부',gram:1,ask:'두 번째 승부! 시합 하나___ 승부가 여러 개 있어요.',opts:[['에',1],['의',0,'안에 있는 것은 "에"를 써요. 시합 하나에!']]},
+  {w:'승부',ask:'마지막 승부! 이기고 지는 결과를 뭐라고 해요?',opts:[['승부',1],['관중',0,'관중은 보는 사람이에요. 이기고 지는 건 "승부"예요.'],['규칙',0,'규칙은 지키는 거예요. 이기고 지는 건 "승부"예요.']]}],
+ arm:[
+  {w:'시합',gram:1,ask:'팔씨름은 "시합"이 자연스러워요, "경기"가 자연스러워요?',opts:[['시합',1],['경기',0,'작은 겨루기는 "시합"이 자연스러워요. 팔씨름 시합!']]}],
+};
+/* the badge that completes the set ends the cartridge (the old engine's celebration, then the next-cartridge question) */
+const got=ws=>({award:ws,...(WORDS.every(w=>has(w)||ws.includes(w))?{finale:1,set:()=>{state.f.done=1}}:{})});
+const NPC={
+ minsu:{name:'민수',zone:'village',x:5,y:4,dir:'left',look:P({hair:'#3B2A22',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#4A4F6A'}),badge:['눕다'],
+  after:'쿨쿨… (민수는 벌써 누웠어요.)',
+  talk:()=>[{say:'하아암… 피곤해요.'},{say:'저는 항상 피곤해요. 잠을 잘 못 자요.'},Q.minsu[0],Q.minsu[1],
+   {say:'좋아요! 아홉 시에 누울 거예요. 핸드폰도 안 볼게요.',...got(['눕다'])}]},
+ jina:{name:'지나',zone:'village',x:7,y:5,dir:'up',look:P({hair:'#7A3E22',skin:'#F3D0B0',shirt:'#E07A5F',pants:'#3D5A80',long:1}),badge:['떨어지다'],
+  after:'이제 병을 탁자 가운데에 놓았어요. 안 떨어져요!',
+  talk:()=>[{say:'앗! 방금 "쨍그랑" 소리 들었어요?'},Q.jina[0],{say:'다행히 안 깨졌어요.'},Q.jina[1],
+   {say:'아이고! 저도 자주 떨어뜨려요.',...got(['떨어지다'])}]},
+ junho:{name:'준호',zone:'village',x:11,y:10,dir:'down',look:P({hair:'#1E1E24',skin:'#E8B98F',shirt:'#3FA86B',pants:'#2E3548'}),badge:['놓다','넣다'],
+  after:'핸드폰은 주머니에 넣었어요. 이제 안전해요.',
+  talk:()=>[{say:'제 핸드폰 어디 있지…?'},{say:'아! 기억났어요. 아까 탁자 위에 뒀어요.'},Q.junho[0],{say:'찾았어요! 이제 안 잃어버릴 거예요.'},Q.junho[1],
+   {say:'위에는 놓다, 안에는 넣다! 고마워요.',...got(['놓다','넣다'])}]},
+ sabeom:{name:'사범님',zone:'village',x:4,y:14,dir:'down',look:P({hair:'#9A9AA3',skin:'#E6B892',shirt:'#F4F4F4',pants:'#F4F4F4',belt:'#1C1C1C'}),badge:['시합'],
+  after:'대련은 연습, 시합은 진짜! 힘내요.',
+  talk:()=>[{say:'어서 와요! 여기는 가라테 도장이에요.'},{say:'친구랑 연습하는 건 "대련"이에요.'},Q.sabeom[0],Q.sabeom[1],
+   {say:'좋아요! 경기장에 가 보세요. 선수가 기다려요.',...got(['시합'])}]},
+ ref:{name:'심판',zone:'village',x:20,y:4,dir:'left',look:P({hair:'#2B2B2B',skin:'#E3B48C',shirt:'stripe',pants:'#1F1F1F'}),badge:['규칙','심판'],
+  after:'반칙은 안 돼요! 규칙을 지키세요.',
+  talk:()=>[{say:'안녕하세요. 저는 심판이에요.'},{say:'저는 시합을 봐요. 그리고 결정해요.'},Q.ref[0],Q.ref[1],
+   {say:'정답! 이제 링 위의 선수랑 시합해 보세요.',...got(['규칙','심판'])}]},
+ sua:{name:'관중 수아',zone:'village',x:17,y:2,dir:'down',look:P({hair:'#C0582E',skin:'#F3D0B0',shirt:'#F2C94C',pants:'#3D5A80',long:1}),badge:['관중'],
+  after:'힘내라! 힘내라!',
+  talk:()=>[{say:'와아아! 힘내라!'},{say:'저는 관중이에요. 앉아서 구경해요.'},Q.sua[0],Q.sua[1],
+   {say:'맞아요! 같이 응원해요~',...got(['관중'])}]},
+ fan1:{name:'관중',zone:'village',x:15,y:2,dir:'down',look:P({hair:'#2F2F38',skin:'#DDAE85',shirt:'#5B8BD9',pants:'#333'}),
+  talk:()=>[{say:'우와! 관중이 진짜 많죠? 오늘 큰 시합이에요!'}]},
+ fan2:{name:'관중',zone:'village',x:19,y:2,dir:'down',look:P({hair:'#E0C070',skin:'#F3D0B0',shirt:'#D9544B',pants:'#333'}),
+  talk:()=>[{say:'저는 매주 경기장에 와요. 앉아서 구경하는 게 좋아요.'}]},
+ taeo:{name:'선수 태오',zone:'village',x:17,y:5,dir:'down',look:P({hair:'#1A1A1A',skin:'#D9A47A',shirt:'#F4F4F4',pants:'#F4F4F4',belt:'#1C1C1C'}),badge:['승부'],
+  after:'다음엔 제가 이길 거예요!',
+  /* gate: you need the referee's badge before the match */
+  script:()=>(!has('심판')&&!has('승부'))?[{say:'시합하고 싶어요? 먼저 심판님한테 규칙을 들으세요!'}]:null,
+  talk:()=>[{say:'좋아요! 저랑 시합해요!'},{say:'시합 하나에 승부가 세 개 있어요. 준비됐어요?'},...Q.taeo,
+   {say:'으악! 제가 졌어요. 세 승부 다 이겼어요!'},{who:'심판',say:'승부 끝! 도전자 승리!',...got(['승부'])}]},
+ arm:{name:'팔씨름 아저씨',zone:'village',x:19,y:15,dir:'right',look:P({hair:'#5A3A22',skin:'#D9A47A',shirt:'#B5654A',pants:'#3A3A48'}),
+  talk:()=>[{say:'팔씨름 할래요? 팔꿈치를 탁자에 놓아요.'},Q.arm[0],{say:'맞아요! 으으으… 제가 이겼어요! 하하. 또 와요!'}]},
+};
+const sign=t=>({steps:[{who:'표지판',say:t}]});
+const ZONES={
+ village:{name:'단어 마을',reg:'단어 마을',outdoor:true,
+  /* map legend: character → tile drawing; walk = can step on it */
+  legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+   'H':{tile:'brick'},'G':{tile:'dojoWall'},'=':{tile:'wood',walk:1},'m':{tile:'mat',walk:1},'_':{tile:'sand',walk:1},
+   'R':{tile:'ring',walk:1},'S':{tile:'stands'},'~':{tile:'pond'},'b':{tile:'bed'},'t':{tile:'tableIn'},'a':{tile:'tableOut'},'p':{tile:'sign'}},
+  map:[
+"TTTTTTTTTTTTTTTTTTTTTTTT",
+"T......................T",
+"T.HHHHHHHH...SSSSSSSSS.T",
+"T.H======H...S_______S.T",
+"T.H=b==t=H...S_RRRR__S.T",
+"T.H======H...S_RRRR__S.T",
+"T.HHHH=HHH...S_RRRR__S.T",
+"T.....,......S_______S.T",
+"T.....,.....pSSSS_SSSS.T",
+"T.....,,,,,,,,,,,,,,,..T",
+"T.**..,.p.....~~~~..,..T",
+"T.**..,.......~~~~..,..T",
+"T.....,,,,,,,,,,,,,,,..T",
+"T.GGGGGG.,.............T",
+"T.G====G.,...*.....**..T",
+"T.G=mm=G.,..........a..T",
+"T.GGG=GG.p.............T",
+"T........,.............T",
+"TTTTTTTTTTTTTTTTTTTTTTTT"],
+  npcs:['minsu','jina','junho','sabeom','ref','sua','fan1','fan2','taeo','arm'],
+  spots:{'12,8':sign('경기장 · 오늘은 가라테 시합!'),'8,10':sign('단어 마을 · 배지 아홉 개를 모아요!'),'9,16':sign('가라테 도장 · 사범님이 기다려요.'),
+   '4,4':'침대예요. 푹신해요. 여기에 눕고 싶어요…','7,4':'탁자예요. 병이 없어요. 아까 떨어졌나 봐요.','20,15':'팔씨름용 탁자예요. 팔꿈치를 여기에 놓아요.'},
+  /* a line for every tile of a kind, picked by the faced tile's position (the old sayAt picked the same way) */
+  things:{
+   T:V.TREES,
+   H:['빨간 벽돌집이에요. 안에서 쿨쿨 소리가 들려요. 😴','벽돌집 벽이에요. 아주 튼튼해요.','작은 창문이 있어요. 집 안이 조용해요.'],
+   S:['경기장 자리예요. 사람들이 앉아서 구경해요. 📣','경기장 벽이에요. 안에서 "와아!" 소리가 나요.','자리가 많아요. 오늘은 사람이 정말 많아요!'],
+   G:['가라테 도장 벽이에요. 안에서 "얍!" 소리가 나요. 🥋','도장 문은 아래쪽에 있어요.','창문에 하얀 도복이 걸려 있어요.'],
+   '~':['연못이에요. 오리 두 마리가 싸워요. 심판이 필요해요! 🦆🦆','물에 비친 내 얼굴… 시합 전이라서 긴장돼요. 😬','연못에 공이 떨어졌어요. 누가 넣었어요? ⚽'],
+  }},
+};
+const INTRO=['단어 마을에 온 걸 환영해요!','마을 사람들한테 가서 A 버튼으로 말해요.','머리 위에 ! 가 있는 사람한테 배지가 있어요. 배지 아홉 개를 모아요!'].map(say=>({say}));
+const DONE=['축하해요! 배지 아홉 개를 다 모았어요!','눕다, 떨어지다, 놓다, 넣다, 시합, 승부, 규칙, 심판, 관중. 완벽해요!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'];
+const questText=()=>'';  // no 목표 line: the help under the pad says what to do, as before
+return {WORDS,DICT,CONFUSE,Q,ITEMS:{},ZONES,NPC,FOLLOW:null,INTRO,DONE,questText,TILES:V.TILES};
+}});

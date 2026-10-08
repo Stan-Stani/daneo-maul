@@ -1,7 +1,7 @@
 import {execFileSync} from 'node:child_process';
-// Usage: node tests/play.mjs c1   → builds, plays the chapter by keyboard in headless Chrome, saves screenshots to tests/shots/c1/
+// Usage: node tests/play.mjs ch1   → builds, plays the chapter by keyboard in headless Chrome, saves screenshots to tests/shots/ch1/
 import {spawn} from 'node:child_process';import fs from 'node:fs';import path from 'node:path';
-const ch=process.argv[2]||'c1';const root=path.resolve(path.dirname(new URL(import.meta.url).pathname),'..');
+const ch=process.argv[2]||'ch1';const root=path.resolve(path.dirname(new URL(import.meta.url).pathname),'..');
 const out=path.join(root,'tests/shots',ch);fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});
 // One Chrome at a time on this machine (7 GB RAM froze when several ran at once): take a lock, wait for it.
 const LOCK='/tmp/seongsilho-play.lock';
@@ -14,14 +14,14 @@ const unlock=()=>{try{if(fs.readFileSync(LOCK,'utf8')===String(process.pid))fs.r
 const reap=()=>{try{execFileSync('pkill',['-9','-f',`user-data-dir=${tmp}/prof`])}catch(e){}};
 process.on('exit',()=>{reap();unlock();try{fs.rmSync(tmp,{recursive:true,force:true})}catch(e){}});for(const sig of ['SIGINT','SIGTERM'])process.on(sig,()=>{unlock();process.exit(130)});
 const tmp=fs.mkdtempSync('/tmp/play-');
-execFileSync('python3',[path.join(root,'build.py'),'--out',path.join(tmp,'built.html')]); // own build: safe when several chapters are tested at once
+fs.copyFileSync(path.join(root,'index.html'),path.join(tmp,'built.html'));
 const html=fs.readFileSync(path.join(tmp,'built.html'),'utf8');
-const driver=fs.readFileSync(path.join(root,'tests/driver.js'),'utf8');
-const walk=fs.readFileSync(path.join(root,'tests/walk',(process.argv[3]||ch)+'.js'),'utf8');
-fs.writeFileSync(path.join(tmp,'play.html'),html.replace('</body></html>',`<script>${driver}\ntry{localStorage.clear()}catch(e){}\nsetTimeout(()=>__play(${walk}),900);</script>\n</body></html>`));
+const driver=fs.readFileSync(path.join(root,'tests/'+(process.argv[3]||'tapcheck')+'.js'),'utf8');
+const walk='';
+fs.writeFileSync(path.join(tmp,'play.html'),html.replace('</body></html>',`<script>${driver}\ntry{localStorage.clear()}catch(e){}\nsetTimeout(()=>__play(),900);</script>\n</body></html>`));
 const port=9300+Math.floor(Math.random()*500);
 const chrome=spawn('flatpak',['run',`--filesystem=${tmp}`,'com.google.Chrome','--headless=new','--mute-audio','--disable-gpu','--hide-scrollbars',`--remote-debugging-port=${port}`,
- '--window-size=420,860',`--user-data-dir=${tmp}/prof`,'--autoplay-policy=no-user-gesture-required',`file://${tmp}/play.html?ch=${ch}`],{stdio:'ignore'});
+ '--window-size=420,860',`--user-data-dir=${tmp}/prof`,'--autoplay-policy=no-user-gesture-required',`file://${tmp}/play.html`],{stdio:'ignore'});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let ws;for(let i=0;i<60&&!ws;i++){try{const l=await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();const pg=l.find(t=>t.type==='page');if(pg)ws=pg.webSocketDebuggerUrl}catch(e){}if(!ws)await sleep(500)}
 if(!ws){console.error('chrome did not start');chrome.kill();process.exit(2)}

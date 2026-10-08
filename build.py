@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
-"""Build index.html: src/daneo-maul.html + the tap-a-word dictionary (lexicon/) injected before the game scripts."""
-import json,pathlib
+"""Assemble index.html from src/ on the shared walk engine: shell + dictionary + chapter registry + 단어 마을's art + chapters + engine.
+(The old single-file game is src/daneo-maul.html, built by tools/build_legacy.py, until every cartridge is ported.)"""
+import pathlib,re,sys,json
 root=pathlib.Path(__file__).parent
-html=(root/'src/daneo-maul.html').read_text(encoding='utf-8')
-lexmap=json.loads((root/'src/lexicon-map.json').read_text(encoding='utf-8'))
-alldefs=json.loads((root/'lexicon/defs.json').read_text(encoding='utf-8'))
+shell=(root/'src/shell.html').read_text(encoding='utf-8')
+chs=sorted((root/'src/chapters').glob('c*.js'),key=lambda p:int(re.search(r'\d+',p.stem).group()))
+if '--chapters' in sys.argv: # publish only finished chapters: --chapters c1,c3
+    keep=sys.argv[sys.argv.index('--chapters')+1].split(',');chs=[p for p in chs if p.stem in keep]
+lexmap=json.loads((root/'src/lexicon-map.json').read_text(encoding='utf-8')) if (root/'src/lexicon-map.json').exists() else {}
+defs_p=root/'lexicon/defs.json'
+alldefs=json.loads(defs_p.read_text(encoding='utf-8')) if defs_p.exists() else {}
 used={l for ls in lexmap.values() for l in ls}
-lex={'map':{k:v for k,v in lexmap.items() if any(alldefs.get(l) for l in v)},'defs':{l:d for l,d in alldefs.items() if d}}  # all definitions: new cartridges get stem/prefix matches without a rebuild
-tag='<script>\n/* Tap-a-word dictionary: word as written → dictionary forms + learner definitions (lexicon/). */\nwindow.LEX='+json.dumps(lex,ensure_ascii=False,separators=(',',':'))+';\n</script>\n'
-i=html.index('<script>')
-(root/'index.html').write_text(html[:i]+tag+html[i:],encoding='utf-8')
-print('built index.html ·',len(lex['defs']),'definitions')
+lex={'map':{k:v for k,v in lexmap.items() if any(l in alldefs and alldefs[l] for l in v)},'defs':{l:d for l,d in alldefs.items() if l in used and d}}
+parts=['<script>\n/* Tap-a-word dictionary: word as written → dictionary forms, and learner definitions (lexicon/). */\nwindow.LEX='+json.dumps(lex,ensure_ascii=False,separators=(',',':'))+';\n</script>',
+ '<script>\n/* Chapters register themselves here; each keeps its own save. */\nconst CHAPTERS=[];\n</script>']
+parts.append(f'<script>\n{(root/"src/village.js").read_text(encoding="utf-8")}</script>')  # 단어 마을's own tiles, people and markers
+parts+=[f'<script>\n{p.read_text(encoding="utf-8")}</script>' for p in chs]
+parts.append(f'<script>\n{(root/"src/game.js").read_text(encoding="utf-8")}</script>')  # this game's settings for the shared engine
+parts.append(f'<script>\n{(root/"src/engine.js").read_text(encoding="utf-8")}</script>')
+out=pathlib.Path(sys.argv[sys.argv.index('--out')+1]) if '--out' in sys.argv else root/'index.html'
+out.write_text(shell.replace('<!--SCRIPTS-->','\n'.join(parts)),encoding='utf-8')
+print('built',out.name,'with',len(chs),'chapter(s)')
