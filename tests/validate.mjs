@@ -3,6 +3,7 @@ import fs from 'node:fs';import vm from 'node:vm';
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).filter(x=>!x.includes('window.LEX='));
 const ctx={state:{f:{},items:[],badges:[],lv:{}},ZID:'',console,window:{LEX:{map:{},defs:{}}},has:w=>ctx.state.badges.includes(w),NPCS:[],player:{x:0,y:0,dir:'down'}};vm.createContext(ctx);
+{const lexS=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(x=>x.includes('window.LEX='));if(lexS)vm.runInContext(lexS,ctx)}  /* the dictionary, as the page loads it first */
 vm.runInContext(scripts[0].replace('const CHAPTERS','var CHAPTERS'),ctx);
 for(const s of scripts.slice(1,-1))vm.runInContext(s,ctx);
 const errs=[];const allWords=new Map();
@@ -22,7 +23,7 @@ for(const CH of ctx.CHAPTERS){
   for(const [c,th] of Object.entries(Z.things||{})){ // a line for every tile of a kind
    if(!Z.legend[c])E(`${id} things key "${c}" is not a tile in its legend`);/* walkable tiles may have a line (flowers, a mat): the old engine allowed it */
    if(!Z.map.some(r=>r.includes(c)))E(`${id} things "${c}" is not on the map`);
-   const vs=[].concat(typeof th==='function'?th(0,0):th).filter(Boolean).map(v=>v&&typeof v==='object'&&'say' in v?v.say:v);  /* old cartridges answer [{say}] */
+   const r0=typeof th==='function'?th(0,0):th,vs=[].concat(r0&&r0.steps?r0.steps:r0).filter(Boolean).map(v=>v&&typeof v==='object'?v.say||'':v);  /* cartridges answer {steps:[{say}…]} */
    for(const v of vs){if(typeof v!=='string')E(`${id} things "${c}" gives a non-string`);else if(/[A-Za-z]/.test(v)||v.length>60)E(`${id} things "${c}" line is English or too long: ${v}`)}}
   for(const k of Object.keys(Z.spots||{})){const [x,y]=k.split(',').map(Number);if(walk(Z,x,y))E(`${id} spot ${k} is on a walkable tile`)}
   for(const k of Z.npcs){const n=C.NPC[k];if(!n){E('no npc '+k);continue}if(n.zone!==id)E(`npc ${k} zone ${n.zone}≠${id}`);if(!walk(Z,n.x,n.y)&&!n.proxy&&![[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>walk(Z,n.x+dx,n.y+dy)))E(`npc ${k} on unwalkable ${n.x},${n.y} with no square to talk from`);/* 단어 마을's spectators sit in the stands */if(n.chat&&(!C.NPC[n.chat]||C.NPC[n.chat].zone!==id))E(`npc ${k} chats with ${n.chat}, who isn't in ${id}`)}  // a proxy (e.g. a table) may stand on furniture
@@ -52,7 +53,7 @@ for(const CH of ctx.CHAPTERS){
  const qs=[...Object.values(C.Q).flat(),...(C.BANK||[])];const hasQ=new Set(qs.map(q=>q.w).filter(Boolean));
  for(const q of qs){if(q.w&&!C.WORDS.includes(q.w))E(`question w "${q.w}" not a chapter word`);if(q.opts&&!q.opts.some(o=>o[1]))E('question without a right answer: '+q.ask);if(q.opts)q.opts.filter(o=>!o[1]).forEach(o=>{if(!o[2])E('wrong option without explanation: '+o[0])})}
  const badge=new Set(Object.values(C.NPC).flatMap(n=>n.badge||[]));
- for(const w of C.WORDS){if(!hasQ.has(w))E('no question for '+w);if(!C.DICT[w])E('no DICT for '+w);else for(const k of ['k','e','ex'])if(!C.DICT[w][k])E(`DICT ${w} missing ${k}`);if(!badge.has(w))E('no NPC teaches '+w)}
+ for(const w of C.WORDS){if(!hasQ.has(w))E('no question for '+w);if(!C.DICT[w])E('no DICT for '+w);else for(const k of ['k','e','ex'])if(!C.DICT[w][k])E(`DICT ${w} missing ${k}`);if(C.DICT[w]&&!/[가-힣]/.test(C.DICT[w].k||''))E(`DICT ${w}: no Korean definition (add it to lexicon/defs.json)`);if(!badge.has(w))E('no NPC teaches '+w)}
  const src=CH.make.toString();for(const m of src.matchAll(/\{([^|{}'"`]+)\|([^}'"`]+)\}/g))if(/[가-힣]/.test(m[1])&&!C.DICT[m[2]])E('gloss key missing: '+m[2]);
  if(typeof C.questText()!=='string')E('questText must return a string');
 }

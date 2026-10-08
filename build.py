@@ -12,6 +12,7 @@ lexmap=json.loads((root/'src/lexicon-map.json').read_text(encoding='utf-8')) if 
 defs_p=root/'lexicon/defs.json'
 alldefs=json.loads(defs_p.read_text(encoding='utf-8')) if defs_p.exists() else {}
 used={l for ls in lexmap.values() for l in ls}
+used|={m for p in (root/'src/cartridges').glob('c*.js') for m in re.findall(r"\['([^'\]]+)','[^']*'\]",re.search(r'words:\[(.*?)\]\],',p.read_text(encoding='utf-8'),re.S).group(1)+']')}  # every badge word's card
 lex={'map':{k:v for k,v in lexmap.items() if any(l in alldefs and alldefs[l] for l in v)},'defs':{l:d for l,d in alldefs.items() if l in used and d}}
 parts=['<script>\n/* Tap-a-word dictionary: word as written → dictionary forms, and learner definitions (lexicon/). */\nwindow.LEX='+json.dumps(lex,ensure_ascii=False,separators=(',',':'))+';\n</script>',
  '<script>\n/* Chapters register themselves here; each keeps its own save. */\nconst CHAPTERS=[];\n</script>']

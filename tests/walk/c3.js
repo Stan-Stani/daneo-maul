@@ -1,0 +1,67 @@
+// 3편 walkthrough on the walk engine (trial port): 오박사 hands over 메지, who follows you; beat the rival, 메지 gets hurt,
+// heal her at the 포켓몬 센터. wrong:true answers one question wrong first.
+// Talking to the follower: one arrow tap turns you toward 메지 (holding it would swap places with her, as the engine intends),
+// so the tap is a keydown released on the very next frame, then A — the same key events a player sends.
+(()=>{
+ const toDog=()=>pet.x<player.x?'ArrowLeft':pet.x>player.x?'ArrowRight':pet.y<player.y?'ArrowUp':'ArrowDown';
+ const tapTurn=()=>{const k=toDog();dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true}));requestAnimationFrame(()=>dispatchEvent(new KeyboardEvent('keyup',{key:k,bubbles:true})));return true};
+ const facingDog=()=>{const [dx,dy]=D[player.dir];return petOn()&&player.x+dx===pet.x&&player.y+dy===pet.y};
+ const pressA=()=>{dispatchEvent(new KeyboardEvent('keydown',{key:' ',bubbles:true}));dispatchEvent(new KeyboardEvent('keyup',{key:' ',bubbles:true}));return !!dlg&&dlg.name==='메지'};
+ const talkDog=(shot)=>[
+  {check:()=>petOn()&&Math.abs(pet.x-player.x)+Math.abs(pet.y-player.y)===1,msg:'메지 walks one square behind you'},
+  {check:tapTurn,msg:'tap toward 메지'},{pause:250},
+  {check:facingDog,msg:'one tap turns you to face 메지 (no swap)'},
+  {check:()=>$('btnA').classList.contains('ready'),msg:'A glows facing 메지'},
+  {check:pressA,msg:'A facing 메지 opens her lines'},
+  {intro:1,shot}];
+ return [
+ {intro:1,shot:'01-intro'},
+ {check:()=>$('logBtn').textContent==='배지 0/11',msg:'the HUD counts 11 배지'},
+ {check:()=>C.questText().includes('오박사 연구소')&&!petOn(),msg:'목표: the lab; no dog yet'},
+ {inspect:['village',4,8],shot:'02-lab-sign'},
+ {check:()=>status(C.NPC.rival)==='wait',msg:'라이벌 shows … before you have a 포켓몬'},
+ {talk:'rival',shotBefore:'03-rival-gate'},
+ {check:()=>!has('상대')&&state.stage===0&&__log.some(l=>l.includes('먼저 오박사 연구소에 가 보세요')),msg:'no 포켓몬 yet: 라이벌 sends you to the lab'},
+ {talk:'prof',shotBefore:'04-prof'},
+ {check:()=>state.stage===1&&has('박사')&&has('연구')&&petOn(),msg:'오박사: 박사 and 연구 are in, 메지 follows (stage 1)'},
+ {check:()=>C.questText().includes('메지가 따라와요')&&!$('quest').classList.contains('late'),msg:'목표: the rival waits on the field'},
+ {talk:'aide'},
+ {check:()=>has('따르다'),msg:'조수: 따르다'},
+ {walkTo:['village',10,9],then:'05-follow'},
+ ...talkDog('06-meji'),
+ {check:()=>__log.some(l=>l.includes('메지가 당신을 잘 따라요!')),msg:'메지 wags her tail (stage 1 lines)'},
+ {talk:'guard'},
+ {check:()=>has('지키다'),msg:'경비원: 지키다'},
+ {check:()=>status(C.NPC.nurse)==='wait',msg:'간호사 shows … while 메지 is fine'},
+ {talk:'nurse'},
+ {log:()=>'still:1 간호사 faces '+C.NPC.nurse.dir+' after the talk (the old engine kept still people as they stood: down)'},
+ {check:()=>!has('상태')&&__log.some(l=>l.includes('메지 상태가 아주 좋아요! 다치면 오세요.')),msg:'간호사 before the battle: 메지 is fine, no badge'},
+ {talk:'owner',wrong:true,shotBefore:'07-poppy',shotChoice:'07a-question'},
+ {check:()=>has('물다')&&lv('물다').b===0,msg:'a miss: 물다 is in, level 0 (no ★)'},
+ {talk:'poppy'},
+ {check:()=>__log.some(l=>l.includes('뽀삐가 짖어요')),msg:'뽀삐 (a villager dog) barks'},
+ {talk:'mover'},
+ {check:()=>has('들다')&&lv('들다').b===2,msg:'no miss: 들다 starts at level 2'},
+ {talk:'builder'},
+ {talk:'rival',shotBefore:'08-battle'},
+ {check:()=>state.stage===2&&['상대','기술','공격'].every(has),msg:'battle won: 상대 기술 공격, 메지 is hurt (stage 2)'},
+ {check:()=>C.questText().includes('포켓몬 센터에서 회복')&&$('quest').classList.contains('late'),msg:'목표 (urgent): heal 메지 at the center'},
+ {check:()=>status(C.NPC.nurse)==='todo',msg:'간호사 shows ! once 메지 is hurt'},
+ {walkTo:['village',18,9],then:'09-hurt'},
+ ...talkDog('10-meji-hurt'),
+ {check:()=>__log.some(l=>l.includes('끼잉… 🐶')),msg:'hurt 메지 whimpers'},
+ {talk:'nurse',shotBefore:'11-center',shotSay:{text:'다 모았어요',name:'12-done'}},
+ {check:()=>state.stage===3&&has('상태')&&has('회복')&&!C.questText(),msg:'healed: 상태 회복, no 목표 left (stage 3)'},
+ {check:()=>state.f.done&&state.badges.length===11,msg:'all eleven badges: the cartridge is done'},
+ {check:()=>__log.some(l=>l.includes('배지 열한 개를 다 모았어요')),msg:'the cartridge\'s own celebration plays'},
+ {intro:1,shot:'13-after-done'},
+ {walkTo:['village',18,9]},
+ ...talkDog('14-meji-healed'),
+ {check:()=>__log.some(l=>l.includes('메지가 다 회복했어요!')),msg:'healed 메지 is happy'},
+ {panel:1,shot:'15-badges'},
+ {clock:6*60e3},
+ {check:()=>status(C.NPC.owner)==='review',msg:'뽀삐 주인 shows ? once 물다 is due'},
+ {talk:'owner',shotBefore:'16-review'},
+ {check:()=>lv('물다').b===1,msg:'review answered right: 물다 level 1'},
+ ];
+})()

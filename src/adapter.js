@@ -39,6 +39,7 @@ function makeCartridge(old,words){
   if(n.badge){const pool=(n.pool||talk||[]).filter(s=>s&&s.ask).map(s=>tag(s,n));if(pool.length)Q[n.id]=pool}
   const o=Object.defineProperties({},Object.getOwnPropertyDescriptors(n));  // a fresh copy each boot, getters kept
   o.zone='village';
+  if(n.still)o.fixed=1;  // the old engine's still villagers never turned to face you
   o.talk=talk?()=>talk:typeof n.talk==='function'?()=>(n.talk()||[]).map(s=>tag(s,n)):()=>[];
   o.look=!n.look?null:n.kind==='dog'?{...n.look,draw:VILLAGE.drawDog}:{...n.look,draw:VILLAGE.drawChar};
   NPC[n.id]=o;
@@ -50,16 +51,18 @@ function makeCartridge(old,words){
   const s=lines.find(s=>s.say.includes(stem(w)));if(s)return s.say;
   const q=Object.values(Q).flat().find(q=>q.w===w);return q?`${q.ask} → ${right(q)[0]}`:'';  // a question and its answer
  };
- const DICT={};for(const w of words)DICT[w]={k:(lex[w]&&lex[w].k)||eng[w],e:eng[w],ex:example(w)};
+ const DICT={};for(const w of words)DICT[w]={k:(lex[w]&&lex[w].k)||'…',e:eng[w],ex:example(w)};  // never English as the Korean line (build.py keeps every badge word's definition)
  const spots={};
  for(const [k,[t,l]] of Object.entries(old.signs||{}))spots[k]={steps:[{who:t,say:l}]};
  Object.assign(spots,old.spots||{});
+ /* a cartridge's object lines are whole conversations (sayAt gives one step; 2편's bench reads the book in three), played whole */
+ const things={};for(const [c,th] of Object.entries(old.things||{}))things[c]=typeof th==='function'?(x,y)=>({steps:th(x,y)}):{steps:[].concat(th).map(s=>typeof s==='string'?{say:s}:s)};
  const F=old.follower;
  /* the old engine drew the dog one pixel lower than people, and sadder while it's hurt */
  const FOLLOW=F?{name:F.name,when:F.when,talk:F.talk,look:{...F.look,draw:(L,X,Y,d,s)=>VILLAGE.drawDog(L,X,Y+1,d,s,!!(F.hurt&&F.hurt()))}}:null;
  const quest=()=>(old.quest&&old.quest())||null;
  return {WORDS:words,DICT,CONFUSE:{},Q,ITEMS:{},NPC,FOLLOW,TILES:VILLAGE.TILES,
-  ZONES:{village:{name:'단어 마을',reg:'단어 마을',outdoor:true,legend:old.legend,map:old.map,npcs:old.npcs.map(n=>n.id),spots,things:old.things||{}}},
+  ZONES:{village:{name:'단어 마을',reg:'단어 마을',outdoor:true,legend:old.legend,map:old.map,npcs:old.npcs.map(n=>n.id),spots,things}},
   INTRO:(old.intro||[]).map(say=>({say})),DONE:old.done||[],TIPS:old.tips||[],SOURCES:old.sources||null,
   questText:()=>{const v=quest();return v?v.text:''},
   questLate:()=>{const v=quest();return !!(v&&v.late)},
