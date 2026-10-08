@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Tap-any-word dictionary, step 1: map every word players can see to its dictionary form(s).
 Usage: extract.py <repo> → writes <repo>/src/lexicon-map.json  {eojeol: [lemma, …]}  and prints lemmas missing from defs.json.
-Text comes from every quoted string with Hangul in src/*.html (gloss markup {shown|key} → shown)."""
+Text comes from every quoted string with Hangul in the game's sources: src/*.html, src/*.js and src/chapters|cartridges/*.js
+(gloss markup {shown|key} → shown)."""
+SOURCES=lambda repo:sorted([*(repo/'src').glob('*.html'),*(repo/'src').glob('*.js'),*(repo/'src/chapters').glob('*.js'),*(repo/'src/cartridges').glob('*.js')])
 import json,re,sys,pathlib
 from kiwipiepy import Kiwi
 repo=pathlib.Path(sys.argv[1]);here=pathlib.Path(__file__).parent
@@ -9,7 +11,7 @@ kiwi=Kiwi()
 # teach Kiwi the games' own names and glossary terms so 성실호가 stays 성실호 + 가
 names=set()
 for r in [repo]:
-    for p in sorted((r/'src').glob('*.html')):
+    for p in SOURCES(r):
         src=p.read_text(encoding='utf-8')
         for m in re.finditer(r"(?:name|who):'([^']+)'",src):
             for part in re.split(r'[ ()·]+',m.group(1)):
@@ -24,7 +26,7 @@ for w,v in _defs.items():
     if v and ' — ' in (v.get('e') or '') and re.fullmatch('[가-힣]{2,}',w): names.add((w,'NNP'))
 for w,tag in names: kiwi.add_user_word(w,tag,score=5)
 texts=[]
-for p in sorted((repo/'src').glob('*.html')):
+for p in SOURCES(repo):
     src=p.read_text(encoding='utf-8')
     for m in re.finditer(r"'((?:[^'\\\n]|\\.)*)'|`([^`]*)`|\"((?:[^\"\\\n]|\\.)*)\"",src):
         t=next(g for g in m.groups() if g is not None)
