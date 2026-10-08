@@ -72,5 +72,5 @@ for(const CH of ctx.CHAPTERS){
   (n.src||[]).forEach(([t,u],i)=>{if(!t||!/^https:\/\//.test(u||''))errs.push(`culture ${k}: source ${i+1} needs a title and an https link`)});
   (n.lines||[]).forEach(([ko,en,s],i)=>{if(!ko||!en)errs.push(`culture ${k} line ${i+1}: needs Korean and English`);
    if(!Array.isArray(s)||!s.length||s.some(x=>!(x>=1&&x<=(n.src||[]).length)))errs.push(`culture ${k} line ${i+1}: must cite sources 1–${(n.src||[]).length}`)})}
- for(const f of fs.readdirSync('src/cartridges'))for(const m of fs.readFileSync('src/cartridges/'+f,'utf8').matchAll(/culture:'([^']+)'/g))if(!N[m[1]])errs.push(`${f}: culture:'${m[1]}' has no note in src/culture.js`)}
+ for(const f of fs.readdirSync('src/chapters'))for(const m of fs.readFileSync('src/chapters/'+f,'utf8').matchAll(/culture:'([^']+)'/g))if(!N[m[1]])errs.push(`${f}: culture:'${m[1]}' has no note in src/culture.js`)}
 console.log(errs.length?errs.join('\n'):`ok · ${ctx.CHAPTERS.length} chapter(s), ${allWords.size} words`);process.exit(errs.length?1:0);

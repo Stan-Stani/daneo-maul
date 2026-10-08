@@ -1,0 +1,274 @@
+/* 9편 · 황사 오는 날 — every line, the map and the people as in the old cartridge; on the walk engine, with 단어 마을's own art
+   (src/village.js) and kit (src/kit.js). Built from the player's Anki "다시 봐야 하는 한국어 카드" (Oct 6): 문을 잠갔어요, 황사가 봄마다
+   와요, 나무 주위에서 놀고 있어요, 집값이 비싸지고 있어, 저 사람은 저의 동생이에요, 더 가난해요, 전쟁…
+   Story: yellow dust is coming. Help four people, find your 동생 by the big tree, go home and lock the door on the ✕.
+   state.stage: 0 start · 1 helping · 2 find 동생 · 3 go home ✕ · 4 done */
+/* this chapter's own words for the tap-a-word dictionary, merged into window.LEX when the script loads (as in the old cartridge) */
+(L=>{if(!L)return;
+ const d={
+  '황사':{k:'봄에 중국에서 오는 노란 모래 바람이에요.',e:'yellow dust'},
+  '미세먼지':{k:'공기 속 아주 작은 먼지예요. 눈에 안 보여요.',e:'fine dust'},
+  '마스크':{k:'입하고 코를 가리는 거예요.',e:'mask'},
+  '열쇠':{k:'문을 열고 잠글 때 쓰는 작은 쇠예요.',e:'key'},
+  '닫다':{k:'열린 문이나 창문을 막아요.',e:'to close'},
+  '잠그다':{k:'열쇠로 문을 못 열게 해요.',e:'to lock'},
+  '잠기다':{k:'문이 잠긴 상태가 돼요.',e:'to be locked'},
+  '주위':{k:'어떤 것의 둘레, 옆.',e:'around, surroundings'},
+  '주의':{k:'조심하는 것이에요.',e:'caution'},
+  '전쟁':{k:'나라와 나라가 싸우는 것이에요.',e:'war'},
+  '가난하다':{k:'돈이 많이 없어요.',e:'to be poor'},
+  '부자':{k:'돈이 아주 많은 사람이에요.',e:'rich person'},
+  '동생':{k:'나보다 어린 형제예요.',e:'younger sibling'},
+  '이장':{k:'마을의 대표예요.',e:'village head'},
+  '마을회관':{k:'마을 사람들이 모이는 건물이에요.',e:'village hall'},
+  '약국':{k:'약을 파는 가게예요.',e:'pharmacy'},
+  '약사':{k:'약국에서 일하는 사람이에요.',e:'pharmacist'},
+  '숨바꼭질':{k:'숨고, 찾는 놀이예요.',e:'hide-and-seek'},
+  '숨다':{k:'안 보이게 들어가 있어요.',e:'to hide'},
+  '먼지':{k:'아주 작은 흙이나 가루예요.',e:'dust'},
+  '모래':{k:'바닷가에 있는 작은 돌 가루예요.',e:'sand'},
+  '공기':{k:'우리가 숨 쉬는 것이에요.',e:'air'},
+  '둘레':{k:'어떤 것을 빙 둘러싼 곳이에요.',e:'surroundings'},
+  '안내':{k:'알려 주는 것이에요.',e:'guidance, notice'},
+  '방송':{k:'스피커나 TV로 알려요.',e:'broadcast'},
+  '벗다':{k:'옷, 모자, 마스크를 몸에서 빼요.',e:'to take off'},
+  '차다':{k:'발로 공을 쳐요.',e:'to kick'},
+  '잃어버리다':{k:'물건이 없어져요.',e:'to lose (a thing)'},
+  '콜록콜록':{k:'기침하는 소리예요.',e:'cough cough'},
+  '찰칵':{k:'문이 잠기는 소리예요.',e:'click'},
+  '가리다':{k:'안 보이게 막아요.',e:'to cover'},
+  '옆집':{k:'우리 집 옆에 있는 집이에요.',e:'house next door'},
+ };
+ for(const k in d)if(!L.defs[k])L.defs[k]=d[k];
+ const m={'잠갔어요':['잠그다'],'잠가요':['잠그다'],'잠그었어요':['잠그다'],'잠겼어요':['잠기다'],'잠갔어요\"가':['잠그다'],'잃어버렸어요':['잃어버리다'],'써요':['쓰다'],'이장님':['이장'],'이장님이':['이장'],'이장님한테':['이장'],'숨어':['숨다'],'벗어요':['벗다'],'차고':['차다'],'닫아요':['닫다'],'닫고':['닫다'],'닫았어요':['닫다'],'가난했어요':['가난하다'],'가난해요':['가난하다']};
+ for(const k in m)if(!L.map[k])L.map[k]=m[k];
+})(window.LEX);
+CHAPTERS.push({id:'c9',n:'9편',title:'황사 오는 날',place:'황사 · 미세먼지 · 마스크 · 열쇠 · 닫다 · 주위 · -고 있다 · 전쟁 · 가난하다 · 부자 · 동생 · 잠그다',words:12,save:'daneo-maul-v9',color:'#B8923A',
+ start:{zone:'village',x:12,y:11,dir:'up'},introWho:'안내',
+ migrate:KIT.migrate({stage:0}),  // old saves carry over (state.stage stays where it was)
+ make:()=>{
+const P=KIT.person;
+/* the four people to help */
+const SOURCES=['pharm','shop','kids','grandma'];
+const done=()=>SOURCES.filter(k=>NPC[k].badge.every(has)).length;
+const go=n=>()=>{state.stage=n};
+const WORDS=['황사','미세먼지','마스크','열쇠','닫다','주위','-고 있다','전쟁','가난하다','부자','동생','잠그다'];
+/* k: lexicon/defs.json; 황사, 미세먼지, 마스크 and 닫다 aren't in it, so theirs come from this chapter's own dictionary (above) */
+const DICT={
+ '황사':{k:'봄에 중국에서 오는 노란 모래 바람이에요.',e:'yellow dust',ex:'한국에는 황사가 봄마다 와요.'},
+ '미세먼지':{k:'공기 속 아주 작은 먼지예요. 눈에 안 보여요.',e:'fine dust',ex:'오늘 미세먼지가 많아요. 밖에서 운동을 하지 마세요.'},
+ '마스크':{k:'입하고 코를 가리는 거예요.',e:'mask',ex:'황사가 와요. 입하고 코를 가려요. 마스크를 써요.'},
+ '열쇠':{k:'문이나 자물쇠를 여는 것.',e:'key',ex:'열쇠가 없어요! 열쇠를 잃어버렸어요.'},
+ '닫다':{k:'열린 문이나 창문을 막아요.',e:'to close',ex:'바람이 들어와요. 열쇠 없이 그냥 창문을 닫아요.'},
+ '주위':{k:'둘레, 가까운 곳.',e:'around',ex:'아이들이 나무 주위에서 놀아요.'},
+ '-고 있다':{k:'지금 하는 중이에요. 예: 책을 읽고 있어요.',e:'be ~ing',ex:'우리는 숨바꼭질하고 있어요!'},
+ '전쟁':{k:'나라나 무리끼리 크게 싸우는 것.',e:'war',ex:'옛날에 전쟁이 있었어요. 그때는 힘들었어요.'},
+ '가난하다':{k:'돈이 많이 없어요.',e:'to be poor',ex:'우리 집은 옆집보다 더 가난했어요.'},
+ '부자':{k:'돈이 아주 많은 사람.',e:'rich person',ex:'지금은 부자는 아니에요. 그래도 행복해요.'},
+ '동생':{k:'나보다 어린 형제.',e:'younger sibling',ex:'저 사람은 저의 동생이에요.'},
+ '잠그다':{k:'열쇠로 문을 닫아요.',e:'to lock',ex:'열쇠로 문을 잠갔어요.'},
+};
+const CONFUSE={};
+/* every question, by who asks it, so review can reuse them. The 동생's 잠그다 questions are asked at the door (onStep).
+   gram:1 = it tests something else (-마다, 에서, -지 마세요, 잃어버리다, 힘들다, 보다): asked in the conversation as before, but
+   review asks the word's own questions */
+const Q={
+ head:[
+  {w:'황사',ask:'봄마다 중국에서 노란 모래 바람이 와요. 이건 ___예요.',opts:[['황사',1],['홍수',0,'홍수는 물이 넘쳐요. 노란 모래 바람 → "황사".'],['첫눈',0,'첫눈은 겨울에 처음 오는 눈이에요. 모래 바람 → "황사".']]},
+  {w:'황사',gram:1,ask:'한국에는 황사가 ___ 와요. (매년 봄)',opts:[['봄마다',1],['봄에서',0,'"에서"는 장소예요. 매년 봄 → "봄마다".']]},
+  {w:'황사',gram:1,ask:'황사는 어디에서 와요?',opts:[['중국에서',1],['중국에게',0,'"에게"는 사람한테 써요. 장소 → "중국에서".']]},
+  {w:'미세먼지',ask:'공기에 아주 작은 먼지가 많아요. 눈에 안 보여요. 이건 ___예요.',opts:[['미세먼지',1],['미역',0,'미역은 바다 풀이에요. 🌊 작은 먼지 → "미세먼지".']]},
+  {w:'미세먼지',gram:1,ask:'오늘 미세먼지가 많아요. 밖에서 운동을 ___.',opts:[['하지 마세요',1],['하세요',0,'미세먼지는 몸에 안 좋아요. → "하지 마세요".']]}],
+ pharm:[
+  {w:'마스크',ask:'황사가 와요. 입하고 코를 가려요. ___를 써요.',opts:[['마스크',1],['모자',0,'모자는 머리에 써요. 입하고 코 → "마스크".']]},
+  {w:'마스크',ask:'마스크를 ___.',opts:[['써요',1],['입어요',0,'옷은 입어요. 마스크, 모자, 안경은 "써요".'],['신어요',0,'신발은 신어요. 👟 마스크는 "써요".']]},
+  {w:'마스크',ask:'집에 와서 마스크를 ___.',opts:[['벗어요',1],['꺼요',0,'불이나 TV는 꺼요. 마스크는 "벗어요".']]}],
+ shop:[
+  {w:'열쇠',ask:'문을 열 때 쓰는 작은 쇠예요. 🔑 이건 ___예요.',opts:[['열쇠',1],['열심',0,'열심히는 아주 노력해요. 문 → "열쇠".']]},
+  {w:'열쇠',gram:1,ask:'열쇠가 없어요! 열쇠를 ___.',opts:[['잃어버렸어요',1],['잊어버렸어요',0,'잊다는 머리에서 없어져요. 물건이 없어졌어요 → "잃어버렸어요".']]},
+  {w:'닫다',ask:'바람이 들어와요. 열쇠 없이 그냥 창문을 ___.',opts:[['닫아요',1],['잠가요',0,'잠그다는 열쇠로 해요. 🔑 그냥 → "닫아요".']]},
+  {w:'닫다',ask:'"닫다"의 반대는?',opts:[['열다',1],['잠그다',0,'잠그다는 열쇠로 못 열게 해요. 반대 → "열다".']]}],
+ kids:[
+  {w:'주위',ask:'아이들이 나무 ___에서 놀아요. (나무 둘레)',opts:[['주위',1],['위',0,'위는 나무 꼭대기예요! 🌳 둘레 → "주위".'],['주의',0,'주의는 조심해요. 소리가 비슷해요! 둘레 → "주위".']]},
+  {w:'주위',ask:'"주위"하고 "주의", 조심하는 말은?',opts:[['주의',1],['주위',0,'주위는 둘레예요. 조심 → "주의". 황사 주의!']]},
+  {w:'-고 있다',ask:'지금 아이들이 나무 주위에서 ___. (지금 하는 중)',opts:[['놀고 있어요',1],['놀았어요',0,'"놀았어요"는 끝났어요. 지금 → "놀고 있어요".']]},
+  {w:'-고 있다',ask:'집값이 계속 비싸지___ 있어. (지금도 계속)',opts:[['고',1],['서',0,'지금 계속 바뀌어요 → "비싸지고 있어".']]},
+  {w:'-고 있다',ask:'동생은 지금 뭐 해요? 공을 ___.',opts:[['차고 있어요',1],['차고 싶어요',0,'"싶어요"는 원해요. 지금 하는 중 → "차고 있어요".']]}],
+ grandma:[
+  {w:'전쟁',ask:'나라와 나라가 싸워요. 그건 ___이에요.',opts:[['전쟁',1],['시합',0,'시합은 운동 경기예요. 나라가 싸워요 → "전쟁".'],['선거',0,'선거는 투표해요. 나라가 싸워요 → "전쟁".']]},
+  {w:'전쟁',gram:1,ask:'옛날에 전쟁이 있었어요. 그때는 ___.',opts:[['힘들었어요',1],['재미있었어요',0,'전쟁은 무섭고 슬퍼요. → "힘들었어요".']]},
+  {w:'가난하다',ask:'돈이 많이 없어요. 그 사람은 ___.',opts:[['가난해요',1],['가늘어요',0,'가늘다는 얇아요. 돈이 없어요 → "가난해요".']]},
+  {w:'가난하다',gram:1,ask:'우리 집은 옆집___ 더 가난했어요.',opts:[['보다',1],['처럼',0,'"처럼"은 같아요. 비교해요 → "보다".']]},
+  {w:'부자',ask:'돈이 아주 많은 사람은 ___예요.',opts:[['부자',1],['부모',0,'부모는 엄마, 아빠예요. 돈이 많아요 → "부자".']]},
+  {w:'부자',ask:'"가난한 사람"의 반대는?',opts:[['부자',1],['바쁜 사람',0,'바쁘다는 시간이 없어요. 돈이 많아요 → "부자".']]}],
+ sib:[
+  {w:'동생',ask:'나보다 어린 형제는 ___이에요.',opts:[['동생',1],['형',0,'형은 나보다 나이가 많아요. 어려요 → "동생".']]},
+  {w:'동생',ask:'친구한테 소개해요. "저 사람은 저의 ___."',opts:[['동생이에요',1],['동생이 있어요',0,'"있어요"는 가지고 있어요. 소개할 때 → "동생이에요".']]},
+  {w:'잠그다',ask:'집에 들어왔어요. 황사가 들어오면 안 돼요! 열쇠로 문을 ___.',opts:[['잠갔어요',1],['잠그었어요',0,'잠그다 → "잠가요", "잠갔어요". ㅡ가 빠져요!'],['닫았어요',0,'닫다는 그냥 닫아요. 열쇠로 → "잠갔어요".']]},
+  {w:'잠그다',ask:'잠그 + 아요 = ?',opts:[['잠가요',1],['잠그아요',0,'ㅡ가 빠져요 → "잠가요". 쓰다 → 써요하고 같아요!']]},
+  {w:'잠그다',ask:'저는 문을 ___. 이제 안전해요. (내가 했어요)',opts:[['잠갔어요',1],['잠겼어요',0,'잠기다는 문이 그렇게 돼요. 내가 했어요 → "잠갔어요".']]}],
+};
+const NPC={
+ head:{name:'이장',zone:'village',x:7,y:5,dir:'down',still:1,fixed:1,look:P({hair:'#E8E8EE',skin:'#E8B98F',shirt:'#3E7F4A',pants:'#2E3548'}),badge:['황사','미세먼지'],
+  after:'황사 날에는 집에 있어요. 📢',
+  status:()=>(state.stage===1&&done()<SOURCES.length)||state.stage===2?'wait':undefined,
+  script:()=>{
+   if(state.stage===0)return [
+    {say:'어서 와요. 나는 이 마을 이장이에요. 📢'},
+    {say:'하늘 좀 봐요. 노래요. 바람에 모래가 있어요.'},
+    Q.head[0],Q.head[1],
+    {say:'그리고 공기에 작은 먼지도 많아요.'},
+    Q.head[3],Q.head[4],
+    {say:'잘 알아요! 이 배지를 받으세요.',award:['황사','미세먼지'],set:go(1)},
+    {say:'오늘 오후에 황사가 많이 와요. 마을 사람들이 걱정해요.'},
+    {say:'약국, 가게, 큰 나무, 연못에 가 보세요. 네 명을 도와주세요!'}];
+   if(state.stage===1&&done()<SOURCES.length)return [{say:`지금 ${done()}명 도와줬어요. 네 명 다 도와주세요!`}];
+   if(state.stage===1)return [
+    {say:'다 도와줬어요? 고마워요! 😊'},
+    Q.head[2],
+    {say:'그런데… 아직 밖에 아이가 있어요!'},
+    {say:'당신 동생이에요! 큰 나무 주위에 있어요. 빨리 가 보세요! 🌳',set:go(2)}];
+   if(state.stage===2)return [{say:'큰 나무 주위에 동생이 있어요! 빨리요! 🌳'}];
+   return null;
+  },
+  talk:()=>[]},
+ pharm:{name:'약사',zone:'village',x:18,y:5,dir:'down',look:P({hair:'#2B1E1A',skin:'#F3D0B0',shirt:'#F4F4F4',pants:'#4F7BD6',long:1}),badge:['마스크'],
+  after:'밖에서는 꼭 마스크 쓰세요! 😷',
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'지금 바빠요. 마스크 정리 중이에요. 😷'}]:null,
+  talk:()=>[
+   {say:'어서 오세요. 여기는 약국이에요. 저는 약사예요. 💊'},
+   {say:'오늘 황사가 와요. 사람들이 마스크를 많이 사요.'},
+   Q.pharm[0],Q.pharm[1],
+   {say:'자, 마스크 두 개 줄게요. 하나는 동생 거예요.'},
+   Q.pharm[2],
+   {say:'잘했어요! 밖에서는 꼭 쓰세요. 😷',award:['마스크']}]},
+ shop:{name:'가게 주인',zone:'village',x:5,y:10,dir:'down',look:P({hair:'#3B2A22',skin:'#DDAE85',shirt:'#3E7F78',pants:'#2E3548',cap:'#2E3548'}),badge:['열쇠','닫다'],
+  after:'열쇠는 꼭 주머니에! 🔑',
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'어서 오세요! 과자 있어요. 🛒'}]:null,
+  talk:()=>[
+   {say:'아이고, 큰일이에요! 🔑'},
+   {say:'황사 때문에 가게 문을 일찍 닫아요. 그런데…'},
+   Q.shop[0],Q.shop[1],
+   {say:'아, 여기 있어요! 주머니 안에 있었어요. 😅'},
+   Q.shop[2],Q.shop[3],
+   {say:'고마워요! 이제 가게 문을 닫고 집에 가요.',award:['열쇠','닫다']}]},
+ kids:{name:'아이',zone:'village',x:10,y:9,dir:'right',look:P({hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#F2C94C',pants:'#3A3F55',long:1}),badge:['주위','-고 있다'],
+  after:'숨바꼭질 또 해요! 🙈',
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'쉿! 숨바꼭질하고 있어요. 🙈'}]:null,
+  talk:()=>[
+   {say:'안녕하세요! 우리는 숨바꼭질하고 있어요! 🙈'},
+   Q.kids[0],Q.kids[1],
+   {say:'저기 봐요! 친구들이 나무 뒤에 숨어 있어요.'},
+   Q.kids[2],Q.kids[3],
+   {say:'네? 황사가 와요? 알았어요. 엄마한테 갈게요! 🏃',award:['주위','-고 있다']}]},
+ grandma:{name:'할머니',zone:'village',x:9,y:16,dir:'left',still:1,fixed:1,look:P({hair:'#D8D8E0',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#5A3A22',long:1}),badge:['전쟁','가난하다','부자'],
+  after:'할머니 이야기 또 들으러 와요. 👵',
+  status:()=>state.stage===0?'wait':undefined,
+  script:()=>state.stage===0?[{say:'허허, 하늘이 노랗네… 🌸'}]:null,
+  talk:()=>[
+   {say:'어서 와요. 할머니가 옛날 이야기 해 줄게요. 👵'},
+   {say:'옛날에는 하늘이 아주 파랬어요.'},
+   Q.grandma[0],Q.grandma[1],
+   {say:'그때 우리 집은 돈이 없었어요. 밥도 조금 먹었어요.'},
+   Q.grandma[2],Q.grandma[3],
+   {say:'지금은 부자는 아니에요. 그래도 행복해요. 😊'},
+   Q.grandma[4],Q.grandma[5],
+   {say:'자, 황사 와요. 할머니도 집에 갈게요. 고마워요!',award:['전쟁','가난하다','부자']}]},
+ /* by the big tree until you find them (stage 2), then at home by the door */
+ sib:{name:'동생',zone:'village',get x(){return state&&state.stage>=3?20:13},get y(){return state&&state.stage>=3?15:9},dir:'left',look:P({hair:'#2A2F4A',skin:'#F1C9A5',shirt:'#D9544B',pants:'#2E3548',cap:'#F2C94C'}),badge:['동생','잠그다'],
+  after:'집이 제일 좋아요! 🏠',
+  status:()=>state.stage<2||state.stage===3?'wait':undefined,
+  script:()=>{
+   if(state.stage<2)return [{say:'지금 공을 차고 있어요! 나중에 와요. ⚽'}];
+   if(state.stage===2)return [
+    {say:'어? 왜 왔어요? 지금 놀고 있어요! ⚽'},
+    {who:'당신',say:'황사가 와요! 집에 가야 돼요.'},
+    Q.sib[0],
+    {who:'아이',say:'이 사람 누구예요?'},
+    Q.sib[1],
+    {who:'당신',say:'자, 마스크 써요. 약국에서 받았어요. 😷'},
+    {say:'고마워요! 같이 집에 가요!',award:['동생'],set:go(3)},
+    {who:'…',say:'동생이 집으로 먼저 뛰어가요. 🏃'}];
+   if(state.stage===3)return [{say:'빨리 와요! 문 앞 ✕ 에 서요! 🏠'}];
+   return null;
+  },
+  talk:()=>[{say:'집이 제일 좋아요! 🏠'}]},
+ walker:{name:'아저씨',zone:'village',x:22,y:9,dir:'down',look:P({hair:'#1E1E24',skin:'#E8B98F',shirt:'#5B8BD9',pants:'#2E3548'}),
+  talk:()=>[{say:'콜록콜록! 😷 목이 아파요.'},{say:'황사 날에는 물을 많이 마셔요.'}]},
+};
+const ZONES={
+ village:{name:'단어 마을',reg:'단어 마을',outdoor:true,
+  legend:{'.':{tile:'grass',walk:1},',':{tile:'path',walk:1},'*':{tile:'flowers',walk:1},'T':{tile:'tree'},
+   'M':{tile:'schoolWall'},'P':{tile:'centerWall'},'S':{tile:'shopWall'},'H':{tile:'brick'},'D':{tile:'domeDoor'},
+   'x':{tile:'mark',walk:1},'~':{tile:'pond'},'b':{tile:'bench'},'p':{tile:'sign'},'B':{tile:'bigTree'}},
+  map:[
+"TTTTTTTTTTTTTTTTTTTTTTTTTT",
+"T........................T",
+"T.MMMMMMM.......PPPPPP...T",
+"T.MMMMMMM.......PPPPPP...T",
+"T.MMMMMMM.......PPPPPP...T",
+"T....p..,.........,..p...T",
+"T,,,,,,,,,,,,,,,,,,,,,,,,T",
+"T...........,...........*T",
+"T..*.......BB............T",
+"T..........BB....*.......T",
+"T.....,..........,.......T",
+"T.SSSSSS..,..p.....,.....T",
+"T.SSSSSS..,......HHHHHH..T",
+"T.SSSSSS..,......HHHHHH..T",
+"T...,.....,......HHDHHH..T",
+"T,,,,,,,,,,,,,,,,,,x,,,,,T",
+"T..~~~~.b................T",
+"T..~~~~..........*.......T",
+"T.....*..................T",
+"TTTTTTTTTTTTTTTTTTTTTTTTTT"],
+  npcs:['head','pharm','shop','kids','grandma','sib','walker'],
+  spots:{'5,5':KIT.sign('표지판','마을회관 · 오늘 오후 황사 주의! 📢'),
+   '21,5':KIT.sign('표지판','약국 · 마스크 있어요 😷'),
+   '13,11':KIT.sign('표지판','큰 나무 · 마을에서 제일 오래된 나무예요. 🌳')},
+  /* a line for every tile of a kind, picked by the faced tile's position (the old sayAt picked the same way) */
+  things:{
+   T:VILLAGE.TREES,
+   B:['큰 나무예요. 마을에서 제일 오래된 나무예요. 🌳','나무가 아주 커요. 아이들이 나무 주위에서 놀아요.','나뭇잎에 노란 먼지가 있어요. 황사 때문이에요. 😷'],
+   M:['마을회관이에요. 마을 사람들이 모여요.','지붕 위에 스피커가 있어요. 안내 방송을 해요. 📢'],
+   P:['약국이에요. 약하고 마스크를 팔아요. 💊','창문에 "마스크 있어요" 종이가 있어요.'],
+   S:['작은 가게예요. 과자하고 우유를 팔아요. 🛒','가게 창문에 노란 먼지가 많아요.'],
+   H:['우리 집이에요. 빨간 벽돌집이에요. 🏠','창문이 열려 있어요. 빨리 닫아야 해요!'],
+   D:'우리 집 문이에요. 🚪',
+   '~':['연못이에요. 물 위에 노란 먼지가 있어요. 😢','오리가 없어요. 오리도 집에 갔어요.'],
+   b:'벤치예요. 벤치 위에 노란 먼지가 있어요.',
+  }},
+};
+const INTRO=['단어 마을 9편! 봄이에요. 🌸','그런데 하늘이 노래요… 😷','마을회관 앞에 이장님이 있어요. 가 보세요.'].map(say=>({say}));
+const DONE=['축하해요! 배지 열두 개를 다 모았어요! 🎉','황사, 미세먼지, 마스크, 열쇠, 닫다, 주위, -고 있다, 전쟁, 가난하다, 부자, 동생, 잠그다!','? 가 있는 사람한테 다시 말해 보세요. 한 번에 맞히면 ★ 예요.'];
+const PERFECT=['★ 열두 개! 모든 단어가 완벽해요!','황사도 이겼어요! 😷💪'];
+const TIPS=['봄마다 <b>황사</b>가 와요 · 홍수는 물','<b>미세먼지</b>가 많으면 밖에서 운동하지 마세요','<b>마스크</b>를 써요 · 옷은 입어요 · 벗어요','<b>열쇠</b> 🔑 · 잃어버리다(물건) · 잊어버리다(머리)','<b>닫다</b> ↔ 열다 · <b>잠그다</b>는 열쇠로','잠그 + 아요 → <b>잠가요</b> · <b>잠갔어요</b>','나무 <b>주위</b>(둘레) · 주의(조심)','놀<b>고 있어요</b> = 지금 하는 중','<b>전쟁</b> · 시합 · 선거','<b>가난하다</b> ↔ <b>부자</b> · 옆집<b>보다</b> 더','<b>동생</b>(어려요) · 형, 누나, 오빠, 언니(많아요)'];
+/* the task left, if any */
+const quest=()=>{
+ if(state.stage===0)return {text:'📢 마을회관 앞에 가서 이장님을 만나요.'};
+ if(state.stage===1){const n=done();return n<SOURCES.length?{text:`😷 황사가 와요! 사람들을 도와요. ${n}/${SOURCES.length}`}:{late:true,text:'📢 다 도와줬어요! 이장님한테 말해요.'}}
+ if(state.stage===2)return {late:true,text:'🌳 동생을 찾아요! 큰 나무 주위에 있어요.'};
+ if(state.stage===3)return {late:true,text:'🏠 집 문 앞 ✕ 에 서세요.'};
+ return null;
+};
+const questText=()=>{const v=quest();return v?v.text:''};
+const questLate=()=>{const v=quest();return !!(v&&v.late)};
+/* home: stepping on the ✕ at the door at stage 3 */
+const onStep=()=>{
+ if(state.stage!==3||player.x!==19||player.y!==15)return;
+ held=null;player.dir='up';
+ openDialog('동생',[
+  {say:'집에 왔어요! 빨리 들어가요! 🏠'},
+  {who:'당신',say:'들어가자! 창문도 다 닫았어요.'},
+  Q.sib[2],
+  {who:'…',say:'찰칵! 🔒'},
+  Q.sib[3],
+  {say:'이제 황사가 못 들어와요. 안전해요! 😊',award:['잠그다'],set:go(4)},
+  {say:'마스크 벗어도 돼요? 와, 시원해요!'},
+  {who:'이장',say:'(안내 방송) 황사가 끝나면 다시 알려 드릴게요. 모두 집에 계세요! 📢'}]);
+};
+return {WORDS,DICT,CONFUSE,Q,ITEMS:{},ZONES,NPC,FOLLOW:null,INTRO,DONE,TIPS,SOURCES:null,questText,questLate,onStep,afterTalk:KIT.ending({quest,perfect:PERFECT}),TILES:VILLAGE.TILES};
+}});

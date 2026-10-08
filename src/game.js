@@ -9,6 +9,8 @@ var GAME={prefix:'daneo-maul',title:'단어 마을',log:'단어 마을',hud:'배
   $('tips').innerHTML=(C.TIPS||[]).map(t=>`<li>${t}</li>`).join('');$('tipsH').hidden=!(C.TIPS||[]).length;  // tips are the cartridge's own markup (<b>)
   $('srcList').innerHTML=(C.SOURCES||[]).map(([t,u,site])=>`<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t)}</a><small>${esc(site)}</small></li>`).join('');
   $('srcH').hidden=!(C.SOURCES||[]).length}};
+/* Saves used to be stored under the misspelled 'danemaul-…' keys; copy them once to 'daneo-maul-…' (as the old engine did). */
+try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('danemaul-')){const nk='daneo-maul-'+k.slice(9);if(localStorage.getItem(nk)===null)localStorage.setItem(nk,localStorage.getItem(k))}}}catch(e){}
 /* links and habits from the old engine: ?편=5 opens 5편, and the last cartridge played (daneo-maul-cart) is where the game opens */
 try{const q=new URLSearchParams(location.search),p=q.get('편');
  if(p&&!q.get('ch')){q.set('ch','c'+p.replace(/\D/g,''));q.delete('편');history.replaceState(null,'','?'+q)}

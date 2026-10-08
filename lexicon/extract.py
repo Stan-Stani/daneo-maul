@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Tap-any-word dictionary, step 1: map every word players can see to its dictionary form(s).
 Usage: extract.py <repo> → writes <repo>/src/lexicon-map.json  {eojeol: [lemma, …]}  and prints lemmas missing from defs.json.
-Text comes from every quoted string with Hangul in the game's sources: src/*.html, src/*.js and src/chapters|cartridges/*.js
-(gloss markup {shown|key} → shown)."""
-SOURCES=lambda repo:sorted([*(repo/'src').glob('*.html'),*(repo/'src').glob('*.js'),*(repo/'src/chapters').glob('*.js'),*(repo/'src/cartridges').glob('*.js')])
+Text comes from every quoted string with Hangul in src/chapters/cN.js and src/village.js (gloss markup {shown|key} → shown)."""
+SOURCES=lambda repo:sorted((repo/'src/chapters').glob('c*.js'))+[repo/'src/village.js']  # what a player reads: the chapters, and the shared tree lines
 import json,re,sys,pathlib
 from kiwipiepy import Kiwi
 repo=pathlib.Path(sys.argv[1]);here=pathlib.Path(__file__).parent

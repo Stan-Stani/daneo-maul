@@ -17,9 +17,7 @@ const DICT={
  '심판':{k:'이기고 지는 것을 정하는 사람.',e:'referee',ex:'누가 이겼는지 심판이 말해요.'},
  '관중':{k:'경기를 보는 사람들.',e:'spectators',ex:'경기장에 관중이 진짜 많아요.'},
 };
-/* listening review: the word against two that sound close (only with sound on) */
-const CONFUSE={'눕다':['놓다','굽다'],'떨어지다':['떨리다','떠나다'],'놓다':['넣다','낳다'],'넣다':['놓다','널다'],'시합':['시험','식당'],
- '승부':['승리','신부'],'규칙':['규모','구석'],'심판':['신발','심부름'],'관중':['관심','감정']};
+const CONFUSE={};  // listening review picks two other words of this 편
 /* every question, by who asks it, so review can reuse them. gram:1 = it tests something else (에/동안, 이/을, 경기장, 이기다↔지다):
    asked in the conversation as before, but review asks the word's own questions */
 const Q={
