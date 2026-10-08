@@ -1,8 +1,9 @@
 # 단어 마을
 
-A tiny Pokémon-style Korean vocabulary village: walk around, talk to people, answer in Korean, earn badges. Eleven cartridges (편),
+A tiny Pokémon-style Korean vocabulary village: walk around, talk to people, answer in Korean, earn badges. Twelve cartridges (편),
 each its own village, story and save: 1편 경기장과 도장 · 2편 도서관과 카페 · 3편 연구소와 포켓몬 센터 · 4편 체육관과 수리점 ·
-5편 파고 뉴스 · 6편 복습 학교 · 7편 한국 뉴스 · 8편 가을 축제 · 9편 황사 오는 날 · 10편 이사하는 날 · 11편 요리 대회.
+5편 파고 뉴스 · 6편 복습 학교 · 7편 한국 뉴스 · 8편 가을 축제 · 9편 황사 오는 날 · 10편 이사하는 날 · 11편 요리 대회 ·
+12편 강가 대청소.
 
 **Play:** https://stan-stani.github.io/daneo-maul/ (built for phones; arrow keys + Z/X and M for the menu on a keyboard)
 
