@@ -47,7 +47,7 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rend
 .who{font-family:var(--display);font-size:.95rem;color:var(--box-muted);letter-spacing:.04em;display:flex;gap:8px;align-items:center}
 .who .tag{font-size:.75rem;background:var(--seen);border:1px solid var(--seenedge);color:var(--box-ink);border-radius:999px;padding:0 8px}
 .txt{font-family:var(--display);font-size:1.22rem;min-height:1.45em;word-break:keep-all}
-.more{align-self:flex-end;font-size:.8rem;color:var(--box-muted);animation:blink 1s steps(2) infinite}
+.more{position:absolute;right:12px;bottom:0;font-size:.75rem;line-height:1;color:var(--box-muted);animation:blink 1s steps(2) infinite}  /* in the box's bottom padding: no row of its own, so the box doesn't grow when it appears */
 @keyframes blink{50%{opacity:0}}
 .choices{display:flex;flex-direction:column;gap:6px}
 .choice{font-family:var(--display);font-size:1.12rem;text-align:left;background:var(--card);color:var(--box-ink);border:2px solid var(--box-edge);border-radius:6px;padding:8px 12px;cursor:pointer;word-break:keep-all}
