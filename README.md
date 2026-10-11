@@ -20,7 +20,7 @@ each its own village, story and save: 1편 경기장과 도장 · 2편 도서관
   log (대화), every word you looked up (사전), the cartridge list, read-aloud, sound and 문제 알리기.
 - Runs on the shared [walk engine](https://github.com/Stan-Stani/walk-engine) of the sister games
   [성실호](https://github.com/Stan-Stani/seongsilho), [형제](https://github.com/Stan-Stani/hyeongje) and
-  [방과 후](https://github.com/Stan-Stani/banghu), drawn in 단어 마을's own simpler style.
+  [점심 방송](https://github.com/Stan-Stani/jeomsim-bangsong), drawn in 단어 마을's own simpler style.
 
 ## Files
 - `src/chapters/cN.js` — the cartridges, one per file. `docs/CHAPTER_GUIDE.md` explains how to write one.
