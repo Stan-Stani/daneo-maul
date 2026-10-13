@@ -21,6 +21,7 @@ const NEWS=[['10월 6일 파고 특별 선거: 시 정부를 바꿀까요?','htt
  ['파고 경찰, 도로 경주 단속을 늘려요','https://kfgo.com/2026/09/21/fargo-police-ramp-up-enforcement-against-street-racing-and-dangerous-driving/','KFGO']];
 const WORDS=['기자','보도하다','선거','투표하다','찬성하다','은퇴하다','물려받다','개업하다','일자리','전시회','무료','단속하다'];
 const DICT={
+  '듣다(소리)':{k:'귀로 소리를 알아요.',e:'to listen, hear'},
  '기자':{k:'뉴스를 쓰는 사람.',e:'reporter',ex:'뉴스를 취재하고 기사를 쓰는 사람은 기자예요.'},
  '보도하다':{k:'신문이나 방송으로 뉴스를 알려요. 報道.',e:'to report (news)',ex:'뉴스로 사람들한테 소식을 알려요. 뉴스를 보도해요.'},
  '선거':{k:'투표로 사람을 뽑는 일.',e:'election',ex:'사람들이 대표를 뽑거나 중요한 일을 정해요. 그건 선거예요.'},
@@ -111,14 +112,14 @@ const NPC={
    Q.official[1],Q.official[2],Q.official[3],
    {say:'투표하려면 파고에 30일 넘게 살았어야 돼요. 신분증도 가져와요!',award:['선거','투표하다']}]},
  voterA:{name:'주민',zone:'village',x:15,y:9,dir:'down',look:P({hair:'#3B2A22',skin:'#D9A47A',shirt:'#3FA86B',pants:'#3A3F55'}),badge:['찬성하다'],
-  after:'기자님, 양쪽 이야기를 다 들어 주세요! 🙂',
+  after:'기자님, 양쪽 이야기를 다 {들어|듣다(소리)} 주세요! 🙂',
   status:()=>state.stage===0?'wait':undefined,
   script:()=>state.stage===0?[{say:'선거 이야기요? 기자님한테만 말할 거예요. 😄'}]:null,
   talk:()=>[
    {say:'안녕하세요! 저는 정부를 바꾸는 것에 찬성해요.'},
    {say:'구마다 의원이 있으면 시민 목소리가 시청에 더 가까워져요.'},
    ...Q.voterA,
-   {say:'옆 사람은 반대해요. 그 이야기도 들어 보세요. 기자는 중립적이어야 돼요!',award:['찬성하다']}]},
+   {say:'옆 사람은 반대해요. 그 이야기도 {들어|듣다(소리)} 보세요. 기자는 중립적이어야 돼요!',award:['찬성하다']}]},
  voterB:{name:'주민',zone:'village',x:17,y:9,dir:'down',look:P({hair:'#E0C070',skin:'#F1C9A5',shirt:'#8E7CC3',pants:'#3A3F55',long:1}),
   talk:()=>[
    {say:'저는 반대해요. 의원들이 자기 구만 생각할까 봐 걱정돼요.'},
