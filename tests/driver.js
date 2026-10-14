@@ -52,6 +52,11 @@ window.__play=async function(steps){
    if(typing&&!typing.finished){await key('z');continue}
    const who=$('who').textContent,txt=$('txt').textContent;if(LOG[LOG.length-1]!==`  ${who}: ${txt}`)log(`  ${who}: ${txt}`);
    if(choosing()&&dlg.cur.choose){const bs=choiceBtns();log('  ? '+dlg.cur.choose.map(c=>c[0]).join(' / ')+' > '+bs[bs.length-1].textContent);bs[bs.length-1].click();await wait(250);continue}  // a plain choice (e.g. next chapter?): stay
+   if(typeof writing==='function'&&writing()){  // 쓰기 문제: type the answer (a wrong option first on a wrong:true walk) and press Enter
+    const s=dlg.cur,ci=s.opts.findIndex(o=>o[1]),wi=s.opts.findIndex(o=>!o[1]);let a=s.opts[ci][0],label='> (written) '+a;
+    if(opts.wrong&&wi>=0&&!wrongDone.has(s.ask)){wrongDone.add(s.ask);a=s.opts[wi][0];label='> (written, wrong) '+a}
+    if(opts.shotChoice&&!shotN++){await shot(opts.shotChoice)}
+    const inp=$('writeIn');inp.focus();inp.value=a;log('  '+label);inp.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));await wait(40);continue}
    if(choosing()){
     const s=dlg.cur,btns=choiceBtns();const want=i=>btns.findIndex(b=>+b.dataset.i===i);
     const ci=s.opts.findIndex(o=>o[1]),wi=s.opts.findIndex(o=>!o[1]);
@@ -144,7 +149,7 @@ window.__play=async function(steps){
      if(s.shot)await shot(s.shot);const w=[...$('talkList').querySelectorAll('.w')].sort((a,b)=>b.textContent.length-a.textContent.length)[0];w.click();await wait(150);
      check(!$('gloss').hidden,'tapping a word in the log opens the dictionary: '+w.textContent);if(s.shot)await shot(s.shot+'-tap');await key('x');await key('x');check($('talkPanel').hidden,'B closes the log')}
    else if(s.start){$('startBtn').click();await wait(200);check(!$('startPanel').hidden,'START opens the menu');
-     check($('startPanel').querySelectorAll('.mi').length===9,'menu has 대화 · 사전 · 교시 고르기 · 나 꾸미기 · 읽기 · 소리 · 듣기 문제 · 문제 알리기 · 디버그');if(s.shot)await shot(s.shot);
+     check($('startPanel').querySelectorAll('.mi').length===10,'menu has 대화 · 사전 · 교시 고르기 · 나 꾸미기 · 읽기 · 소리 · 듣기 문제 · 쓰기 문제 · 문제 알리기 · 디버그');if(s.shot)await shot(s.shot);
      await key('x');check($('startPanel').hidden,'B closes the menu');
      $('startBtn').click();await wait(120);$('tapBtn').click();await wait(200);check($('startPanel').hidden&&!$('tapPanel').hidden,'a menu item closes the menu and opens its panel');await key('x');check(!$('startPanel').hidden,'closing it goes back to the menu');await key('x')}
    else if(s.taps){$('tapBtn').click();await wait(250);const rows=[...$('tapList').querySelectorAll('.tp')];
