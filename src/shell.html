@@ -6,7 +6,7 @@
 <style>
 /* Layout: handheld-console look. Header (title, cartridge, sound, badges), quest strip, pixel map with RPG text box overlaid, D-pad + A/B below.
    Single deliberate look (night console shell), so colors are fixed rather than theme-switched. */
-:root{
+:root{--ok-ink:#1E7B3C;
   color-scheme:dark;
   --shell:#1E2433; --shell-2:#283044; --edge:#3A4560; --ink:#F1F3F8; --muted:#A5AEC4;
   --box:#FBFAF4; --box-ink:#1F2433; --box-edge:#2B3246; --box-muted:#5A6380; --accent:#F2C94C; --accent-ink:#2A2210;
@@ -14,8 +14,8 @@
   --display:"Do Hyeon","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
 }/* dark mode for the dialogue box and sheets: follows the device, and claude.ai's own theme switch */
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--box:#262D3F;--card:#30384D;--box-ink:#EEF1F7;--box-edge:#4A5677;--box-muted:#A3ACC4;--got:#3A3320;--gotedge:#C9A13A;--seen:#2B3550;--seenedge:#6E86BD;--off:#333A4C;--offink:#8C93A6}}
-:root[data-theme="dark"]{--box:#262D3F;--card:#30384D;--box-ink:#EEF1F7;--box-edge:#4A5677;--box-muted:#A3ACC4;--got:#3A3320;--gotedge:#C9A13A;--seen:#2B3550;--seenedge:#6E86BD;--off:#333A4C;--offink:#8C93A6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ok-ink:#8EE3A6;--box:#262D3F;--card:#30384D;--box-ink:#EEF1F7;--box-edge:#4A5677;--box-muted:#A3ACC4;--got:#3A3320;--gotedge:#C9A13A;--seen:#2B3550;--seenedge:#6E86BD;--off:#333A4C;--offink:#8C93A6}}
+:root[data-theme="dark"]{--ok-ink:#8EE3A6;--box:#262D3F;--card:#30384D;--box-ink:#EEF1F7;--box-edge:#4A5677;--box-muted:#A3ACC4;--got:#3A3320;--gotedge:#C9A13A;--seen:#2B3550;--seenedge:#6E86BD;--off:#333A4C;--offink:#8C93A6}
 
 [hidden]{display:none!important}
 html,body{height:100%;margin:0}
