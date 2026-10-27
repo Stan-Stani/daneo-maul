@@ -11,7 +11,7 @@ execFileSync('python3',[path.join(root,'build.py'),'--out',path.join(tmp,'new.ht
 const reap=()=>{try{execFileSync('pkill',['-9','-f',`user-data-dir=${tmp}/prof`])}catch(e){}};
 process.on('exit',()=>{reap();try{fs.rmSync(tmp,{recursive:true,force:true})}catch(e){}});
 const port=9200+Math.floor(Math.random()*90);
-spawn('flatpak',['run',`--filesystem=${tmp}`,'com.google.Chrome','--headless=new','--mute-audio','--disable-gpu','--hide-scrollbars',`--remote-debugging-port=${port}`,
+spawn('flatpak',['run','--nodevice=all',`--filesystem=${tmp}`,'com.google.Chrome','--headless=new','--mute-audio','--disable-gpu','--hide-scrollbars',`--remote-debugging-port=${port}`,
  '--window-size=420,860',`--user-data-dir=${tmp}/prof`,'about:blank'],{stdio:'ignore'});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let ws;for(let i=0;i<60&&!ws;i++){try{const l=await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();const pg=l.find(t=>t.type==='page');if(pg)ws=pg.webSocketDebuggerUrl}catch(e){}if(!ws)await sleep(500)}
