@@ -16,6 +16,8 @@ used|={m for p in (root/'src/chapters').glob('c*.js') for s in re.findall(r"cons
 lex={'map':{k:v for k,v in lexmap.items() if any(l in alldefs and alldefs[l] for l in v)},'defs':{l:d for l,d in alldefs.items() if l in used and d}}
 parts=['<script>\n/* Tap-a-word dictionary: word as written → dictionary forms, and learner definitions (lexicon/). */\nwindow.LEX='+json.dumps(lex,ensure_ascii=False,separators=(',',':'))+';\n</script>',
  '<script>\n/* Chapters register themselves here; each keeps its own save. */\nconst CHAPTERS=[];\n</script>']
+gt_p=root/'src/grammar-tags.json'  # words per chapter (walk-engine/tools/grammar_tags.py): the chapter list's "아는 말 N%"
+if gt_p.exists(): parts.append('<script>\n/* Words per chapter (walk-engine/tools/grammar_tags.py). */\nglobalThis.LINE_GRAMMAR='+gt_p.read_text(encoding='utf-8').strip()+';\n</script>')
 parts.append(f'<script>\n{(root/"src/village.js").read_text(encoding="utf-8")}</script>')  # 단어 마을's own tiles, people and markers
 parts.append(f'<script>\n{(root/"src/kit.js").read_text(encoding="utf-8")}</script>')  # 단어 마을's chapter kit
 parts+=[f'<script>\n{p.read_text(encoding="utf-8")}</script>' for p in chs]
